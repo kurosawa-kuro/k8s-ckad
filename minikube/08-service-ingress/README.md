@@ -20,9 +20,7 @@ Service による内部・外部アクセスの公開、および Ingress によ
 ## ✅ Step 1: PodのYAML生成（kubectl run）
 
 ```bash
-kubectl run nodejs-api-pod \
-  --image=986154984217.dkr.ecr.ap-northeast-1.amazonaws.com/container-nodejs-api-8000:v1.0.5 \
-  --port=8000 --dry-run=client -o yaml > pod-ecr.yaml
+kubectl run nodejs-api-pod --image=986154984217.dkr.ecr.ap-northeast-1.amazonaws.com/container-nodejs-api-8000:v1.0.5 --port=8000 --dry-run=client -o yaml > pod-ecr.yaml
 ```
 
 その後、以下の修正を加えます：
@@ -31,9 +29,40 @@ kubectl run nodejs-api-pod \
 - `containerPort: 8000` を追記
 - `imagePullSecrets` を追加して ECR シークレットを指定
 
+```
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nodejs-api-pod
+  labels:
+    app: nodejs-api
+spec:
+  imagePullSecrets:
+    - name: ecr-registry-secret
+  containers:
+    - name: nodejs-api-container
+      image: 986154984217.dkr.ecr.ap-northeast-1.amazonaws.com/container-nodejs-api-8000:v1.0.5
+      ports:
+        - containerPort: 8000
+  restartPolicy: Always
+```
+
 ---
 
-## ✅ Step 2: ServiceのYAML生成（kubectl expose）
+## ✅ Step 2: Podの作成（--save-configオプション付き）
+
+```bash
+# 初回作成時は--save-configオプションを使用
+kubectl create -f pod-ecr.yaml --save-config
+
+# または、直接作成してからYAMLを保存
+kubectl create -f pod-ecr.yaml
+kubectl get pod nodejs-api-pod -o yaml > pod-ecr.yaml
+```
+
+---
+
+## ✅ Step 3: ServiceのYAML生成（kubectl expose）
 
 ```bash
 kubectl expose pod nodejs-api-pod \
@@ -41,11 +70,39 @@ kubectl expose pod nodejs-api-pod \
   --type=NodePort --dry-run=client -o yaml > service.yaml
 ```
 
-必要に応じて `nodePort: 8000` を手動で指定します（ポート開放済みのため）。
+必要に応じて `nodePort: 30080` を手動で指定します（NodePortの有効な範囲は30000-32767）。
+
+```
+apiVersion: v1
+kind: Service
+metadata:
+  name: nodejs-api-service
+spec:
+  selector:
+    app: nodejs-api
+  ports:
+    - port: 8000
+      targetPort: 8000
+      nodePort: 30080
+  type: NodePort
+```
 
 ---
 
-## ✅ Step 3: IngressのYAML手動作成
+## ✅ Step 4: Serviceの作成（--save-configオプション付き）
+
+```bash
+# 初回作成時は--save-configオプションを使用
+kubectl create -f service.yaml --save-config
+
+# または、直接作成してからYAMLを保存
+kubectl create -f service.yaml
+kubectl get service nodejs-api-service -o yaml > service.yaml
+```
+
+---
+
+## ✅ Step 5: IngressのYAML手動作成
 
 ```yaml
 ingress.yaml
@@ -72,28 +129,68 @@ spec:
 
 ---
 
-## ✅ Step 4: busybox Pod で ClusterIP 接続検証用 YAML 生成
+## ✅ Step 6: Ingressの作成（--save-configオプション付き）
 
 ```bash
-kubectl run busybox-test --image=busybox \
-  --command -- sh -c 'while true; do sleep 3600; done' \
-  --restart=Always --dry-run=client -o yaml > busybox-test.yaml
+# 初回作成時は--save-configオプションを使用
+kubectl create -f ingress.yaml --save-config
+
+# または、直接作成してからYAMLを保存
+kubectl create -f ingress.yaml
+kubectl get ingress nodejs-api-ingress -o yaml > ingress.yaml
 ```
 
 ---
 
-## ✅ Step 5: リソースの作成
+## ✅ Step 7: busybox Pod で ClusterIP 接続検証用 YAML 生成
 
 ```bash
-kubectl apply -f pod-ecr.yaml
-kubectl apply -f service.yaml
-kubectl apply -f ingress.yaml
+# 方法1: Deploymentとして作成
+kubectl create deployment busybox-test --image=busybox --dry-run=client -o yaml > busybox-test.yaml
+
+# または方法2: Podとして直接作成
+cat <<EOF > busybox-test.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: busybox-test
+spec:
+  containers:
+  - name: busybox
+    image: busybox
+    command: ["sh", "-c", "while true; do sleep 3600; done"]
+  restartPolicy: Always
+EOF
+```
+
+---
+
+## ✅ Step 8: busybox Podの作成（--save-configオプション付き）
+
+```bash
+# 初回作成時は--save-configオプションを使用
+kubectl create -f busybox-test.yaml --save-config
+
+# または、直接作成してからYAMLを保存
+kubectl create -f busybox-test.yaml
+kubectl get pod busybox-test -o yaml > busybox-test.yaml
+```
+
+---
+
+## ✅ Step 9: busybox Podの再生成が必要な場合
+
+```bash
+# 既存のPodを削除
+kubectl delete pod busybox-test
+
+# 新しい設定で再作成
 kubectl apply -f busybox-test.yaml
 ```
 
 ---
 
-## 🔍 Step 6: ClusterIP の接続検証
+## 🔍 Step 10: ClusterIP の接続検証
 
 ```bash
 kubectl get svc nodejs-api-service
@@ -103,17 +200,17 @@ kubectl exec -it busybox-test -- wget -qO- http://nodejs-api-service:8000/
 
 ---
 
-## 🌐 Step 7: NodePort で外部公開（EC2）
+## 🌐 Step 11: NodePort で外部公開（EC2）
 
 ```bash
-curl http://<EC2のパブリックIP>:8000/
+curl http://<EC2のパブリックIP>:30080/
 ```
 
-※ Security Group でポート8000を開放しておく必要あり
+※ Security Group でポート30080を開放しておく必要あり
 
 ---
 
-## 🌐 Step 8: Ingress 経由のHTTPアクセス確認
+## 🌐 Step 12: Ingress 経由のHTTPアクセス確認
 
 ```bash
 minikube addons enable ingress  # 一度だけ必要
@@ -129,6 +226,7 @@ curl http://<MINIKUBE_IP>/api/
 - `kubectl run` / `kubectl expose` による YAML 生成手順を採用
 - Service (ClusterIP / NodePort) による安定ルーティング
 - Ingress による外部HTTPアクセス集約制御
+- `--save-config` オプションを使用してリソースの更新を可能に
 
 🔥 ご希望であればこの続きで Deployment や HPA、ConfigMap 連携なども展開可能です！
 
