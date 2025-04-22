@@ -36,7 +36,11 @@ cd ~/dev/k8s-ckad/minikube/01-pod-basic-ingress
 ## ✅ 2. nginx Deployment の作成
 
 ```bash
-kubectl create deployment nginx-deploy --image=nginx:latest --dry-run=client -o yaml > nginx-deploy.yaml
+kubectl create deployment nginx-deploy \
+  --image=nginx:latest \
+  --replicas=1 \
+  --port=80 \
+  --dry-run=client -o yaml > nginx-deploy.yaml
 ```
 
 修正後の内容（`nginx-deploy.yaml`）👇
