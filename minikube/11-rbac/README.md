@@ -151,7 +151,15 @@ kubectl exec rbac-test -- kubectl delete pod rbac-test || echo "✅ delete は�
 
 ## 📄 完成版 YAML 集
 
-> 下記 4 ファイルを保存し、そのまま `kubectl apply -f <file>` すれば一連の RBAC 検証が完了します。
+> *Namespace は **`ckad-ns`** で統一* しています。ファイルを保存して
+>
+> ```bash
+> kubectl apply -f serviceaccount.yaml
+> kubectl apply -f role.yaml
+> kubectl apply -f rolebinding.yaml
+> kubectl apply -f pod.yaml
+> ```
+> で一連の RBAC 検証が完了します。
 
 ### 1. `serviceaccount.yaml`
 ```yaml
@@ -160,13 +168,6 @@ kind: ServiceAccount
 metadata:
   name: app-sa
   namespace: ckad-ns
-  labels:
-    app: express-api
-```yaml
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: app-sa
   labels:
     app: express-api
 ```
@@ -178,17 +179,6 @@ kind: Role
 metadata:
   name: pod-reader
   namespace: ckad-ns
-  labels:
-    app: express-api
-rules:
-  - apiGroups: [""]
-    resources: ["pods"]
-    verbs: ["get", "list"]
-```yaml
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  name: pod-reader
   labels:
     app: express-api
 rules:
@@ -214,21 +204,6 @@ roleRef:
   kind: Role
   name: pod-reader
   apiGroup: rbac.authorization.k8s.io
-```yaml
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: read-pods-binding
-  labels:
-    app: express-api
-subjects:
-  - kind: ServiceAccount
-    name: app-sa
-    namespace: default
-roleRef:
-  kind: Role
-  name: pod-reader
-  apiGroup: rbac.authorization.k8s.io
 ```
 
 ### 4. `pod.yaml`
@@ -238,20 +213,6 @@ kind: Pod
 metadata:
   name: rbac-test
   namespace: ckad-ns
-  labels:
-    app: express-api
-spec:
-  serviceAccountName: app-sa
-  containers:
-    - name: nodejs-api-kubectl
-      image: bitnami/kubectl
-      command: ["sleep", "3600"]
-  restartPolicy: Never
-```yaml
-apiVersion: v1
-kind: Pod
-metadata:
-  name: rbac-test
   labels:
     app: express-api
 spec:
