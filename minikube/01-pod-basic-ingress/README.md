@@ -97,7 +97,6 @@ kubectl apply -f nginx-svc.yaml
 ```bash
 kubectl create ingress nginx-ingress \
   --rule="/=nginx-service:80" \
-  --path-type=Prefix \
   --dry-run=client -o yaml > nginx-ingress.yaml
 ```
 
