@@ -140,7 +140,7 @@ kubectl delete -f deployment.yaml
 kubectl delete ns ckad-pod-ingress
 
 # デフォルトNamespaceに戻す（任意）
-# kubectl config set-context --current --namespace=default
+kubectl config set-context --current --namespace=default
 ```
 
 --- 

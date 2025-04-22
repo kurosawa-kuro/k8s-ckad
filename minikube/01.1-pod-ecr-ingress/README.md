@@ -1,6 +1,6 @@
-# 📘 Kubernetesチュートリアル: Pod基礎（プライベートECR版・CKAD本番意識）
+# 📘 Kubernetesチュートリアル: Pod基礎（プライベートECRイメージ版・CKAD本番意識）
 
-このチュートリアルでは、プライベートなAWS ECRリポジトリにあるNode.js APIイメージを使用してPodを起動します。コンテナはポート8000でリッスンします。
+このチュートリアルでは、パブリックイメージ (Nginx) の代わりに、プライベートなAWS ECRリポジトリにあるNode.js APIイメージ (`container-nodejs-api-8000`) を使用してPodを起動します。コンテナはポート8000でリッスンします。
 
 CKAD試験と同様のアプローチを用います：
 - `kubectl create`で初期YAML生成
@@ -16,18 +16,37 @@ CKAD試験と同様のアプローチを用います：
 |------|-------|
 | メインイメージ | `986154984217.dkr.ecr.ap-northeast-1.amazonaws.com/container-nodejs-api-8000:v1.0.5` |
 | ポート | 8000 |
-| 環境変数 | `NODE_ENV=production`, `PORT=8000` |
+| Gitリポジトリ | [container-nodejs-api-8000](https://github.com/kurosawa-kuro/container-nodejs-api-8000) |
 
 ### 2. AWS CLIとDockerの設定
 
-ローカル環境でAWS ECRにアクセスできるように設定が必要です。
+ローカル環境でAWS ECRにアクセスできるように設定が必要です。**この手順はチュートリアル開始前に一度だけ実行すれば、通常は再実行不要です。**
 
 ```bash
 # AWS CLIの設定 (未設定の場合)
 # aws configure
 
-# ECRへのログイン
+# DockerがECRにログインできるように認証情報を取得・設定
 aws ecr get-login-password --region ap-northeast-1 | docker login --username AWS --password-stdin 986154984217.dkr.ecr.ap-northeast-1.amazonaws.com
+```
+*   **重要:** 上記コマンドを実行すると、`$HOME/.docker/config.json` に認証情報が保存されます。これが後のSecret作成ステップで必要になります。
+
+---
+
+## 🛠️ Minikube/kubectlのインストール（未実施の場合）
+
+```bash
+# Minikubeのダウンロードとインストール
+curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+sudo install minikube-linux-amd64 /usr/local/bin/minikube
+
+# kubectlのインストール
+curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+
+# バージョン確認
+minikube version
+kubectl version --client
 ```
 
 ---
@@ -67,32 +86,19 @@ aws ecr get-login-password --region ap-northeast-1 | docker login --username AWS
     kubectl cluster-info
     ```
 
-### ✅ Step 1: MinikubeのDockerデーモンにECR認証情報を設定
-
-**Minikubeクラスター内のDockerデーモンがECRにアクセスできるように設定します。**
-
-```bash
-# MinikubeのDockerデーモンにログイン
-eval $(minikube docker-env)
-aws ecr get-login-password --region ap-northeast-1 | docker login --username AWS --password-stdin 986154984217.dkr.ecr.ap-northeast-1.amazonaws.com
-```
-
-### ✅ Step 2: Kubernetes Secretの作成 (ECR認証用)
+### ✅ Step 1: Kubernetes Secretの作成 (ECR認証用)
 
 **Minikubeクラスターが起動している状態で、** KubernetesがECRからプライベートイメージをプルできるようにSecretを作成します。
 
 ```bash
-# ECRの認証情報を取得
-ECR_PASSWORD=$(aws ecr get-login-password --region ap-northeast-1)
-
-# Secretを作成
-kubectl create secret docker-registry ecr-registry-secret \
-  --docker-server=986154984217.dkr.ecr.ap-northeast-1.amazonaws.com \
-  --docker-username=AWS \
-  --docker-password=$ECR_PASSWORD
+kubectl create secret generic ecr-registry-secret \
+  --from-file=.dockerconfigjson=$HOME/.docker/config.json \
+  --type=kubernetes.io/dockerconfigjson
 ```
+*   **重要:** このステップは、**Minikubeクラスターを起動または再作成するたびに実行する必要があります。**
+*   **確認:** `kubectl get secret ecr-registry-secret -o yaml` でSecretが作成されたか確認できます。
 
-### ✅ Step 3: YAMLの初期生成（CKAD試験スタイル）
+### ✅ Step 2: YAMLの初期生成（CKAD試験スタイル）
 
 `kubectl run` コマンドでPodの基本的なYAMLテンプレートを生成します。
 
@@ -121,7 +127,7 @@ spec:
     name: nodejs-api-pod # 後で修正
     resources: {}
   dnsPolicy: ClusterFirst
-  restartPolicy: Always
+  restartPolicy: Always # 用途に応じて Never や OnFailure に変更も検討
 status: {}
 ```
 
@@ -161,6 +167,7 @@ spec:
   - image: 986154984217.dkr.ecr.ap-northeast-1.amazonaws.com/container-nodejs-api-8000:v1.0.5
     name: nodejs-api-container
 ```
+*   **注意:** `imagePullSecrets` は `spec` 直下、`containers` と同じレベルに追加します。
 
 ---
 
@@ -189,32 +196,28 @@ spec:
   restartPolicy: Always
 ```
 
+- **ポイント**: プライベートリポジトリの場合は `imagePullSecrets` の指定が不可欠です。
+
 ---
 
 ### ✅ Step 5: Podのデプロイ
 
 編集完了後、Podをデプロイします：
 ```bash
-# 既存のPodがある場合は、先に削除する必要があります
-kubectl delete pod nodejs-api-pod
-
-# 新しい設定でPodを作成
 kubectl apply -f pod-ecr.yaml
 ```
-
-> **注意:** Kubernetesでは、Podの作成後に一部のフィールド（イメージ、アクティブデッドライン秒数、許容値など）しか変更できません。その他の設定を変更する場合は、Podを削除して再作成する必要があります。
 
 ---
 
 ### ✅ Step 6: Podの確認（CKAD本番の手順に近い方法）
 
-Podの状態を確認します。
+Podの状態を確認します。`ImagePullBackOff` などのエラーが出ていないか注意深く見ます。
 ```bash
 kubectl get pods -w
 # または詳細を確認
 # kubectl describe pod nodejs-api-pod
 ```
-Podが `Running` になれば成功です。
+Podが `Running` になれば成功です。イメージのプルに時間がかかる場合があります。
 
 ---
 
@@ -225,6 +228,7 @@ Pod内のコンテナ (ポート8000) へローカルからアクセスできる
 # ローカルポート 8000 をPodのポート 8000 にフォワード
 kubectl port-forward pod/nodejs-api-pod 8000:8000
 ```
+*   これにより、ローカルマシンのポート `8000` へのアクセスがPodのポート `8000` に転送されます。
 
 別ターミナルを開き、`curl` でアクセスして動作を確認します：
 ```bash
@@ -232,22 +236,24 @@ kubectl port-forward pod/nodejs-api-pod 8000:8000
 curl http://localhost:8000/
 ```
 
+Node.js APIのルート (`/`) が返すレスポンス（例: `{"message":"Hello World!"}` など）が表示されれば成功です。
+
 ---
 
-### 🧹 Step 8: 動作確認後のクリーンアップ
+### 🧹 Step 8: 動作確認後のPod削除方法（重要）
 
-動作確認が完了したら、作成したリソースを削除します：
+動作確認が完了したら、作成したPodを削除します：
 ```bash
-# Podの削除
 kubectl delete -f pod-ecr.yaml
-
-# Secretの削除
-kubectl delete secret ecr-registry-secret
-
-# 確認
-kubectl get all
-kubectl get secret
 ```
+
+Pod削除の確認：
+```bash
+kubectl get pods
+```
+クリーンな状態になっていることを確認してください。
+
+*   **補足:** 作成した `ecr-registry-secret` は、クラスターを削除すると失われます。クラスターを起動し直した場合は Step 1 から再度実行してください。
 
 ---
 
