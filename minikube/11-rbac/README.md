@@ -150,6 +150,15 @@ kubectl exec rbac-test -- kubectl get pods -n ckad-ns | head
 kubectl exec rbac-test -- kubectl delete pod rbac-test || echo "✅ delete は Forbidden"
 ```
 
+```
+kubectl exec … get pods が成功
+→ pod-reader Role に付与した get/list 権限が正しく作用。
+
+kubectl exec … delete pod が Forbidden
+→ delete verb を与えていないため、想定どおり拒否。
+```
+
+
 ---
 
 ## 📄 完成版 YAML 一覧
