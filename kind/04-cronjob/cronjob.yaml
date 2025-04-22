@@ -1,0 +1,21 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: hello-job
+  labels:
+    app: cronjob-example
+spec:
+  schedule: "*/1 * * * *"  # 毎分実行
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: hello-job
+              image: busybox
+              command:
+                - /bin/sh
+                - -c
+                - "echo 'Hello CKAD'"
+          restartPolicy: Always  # 変更：Alwaysに設定してPodを削除しない
+      backoffLimit: 3

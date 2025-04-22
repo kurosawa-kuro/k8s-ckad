@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: app-pod
+  labels:
+    app: nodejs-api
+spec:
+  imagePullSecrets:
+  - name: ecr-registry-secret
+  containers:
+  - name: app-container
+    image: 986154984217.dkr.ecr.ap-northeast-1.amazonaws.com/container-nodejs-api-8000:v1.0.5
+    ports:
+    - containerPort: 8000
+    volumeMounts:
+    - mountPath: /usr/src/app/data
+      name: app-storage
+  volumes:
+  - name: app-storage
+    persistentVolumeClaim:
+      claimName: app-pvc

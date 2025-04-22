@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: app-pod
+  labels:
+    app: nodejs-api
+spec:
+  imagePullSecrets:
+    - name: ecr-registry-secret  # ECR認証のための秘密情報
+  containers:
+  - image: 986154984217.dkr.ecr.ap-northeast-1.amazonaws.com/container-nodejs-api-8000:v1.0.5
+    name: app-container
+    ports:
+    - containerPort: 8000
+  restartPolicy: Always

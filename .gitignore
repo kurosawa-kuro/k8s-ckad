@@ -1,0 +1,15 @@
+# Ignore downloaded binaries
+kubectl
+minikube-linux-amd64
+minikube
+
+# Ignore OS specific files
+.DS_Store
+Thumbs.db
+
+# Ignore IDE files
+.vscode/
+.idea/
+
+# Ignore node_modules (if applicable)
+# node_modules/
