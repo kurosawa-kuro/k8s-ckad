@@ -21,17 +21,20 @@
 ## ✅ Step 1 — Pod YAML を生成
 
 ```bash
+# label を先に付けておくと Service selector とズレずに済む
 kubectl run nodejs-api-pod \
   --image=986154984217.dkr.ecr.ap-northeast-1.amazonaws.com/container-nodejs-api-8000:v1.0.5 \
   --port=8000 --restart=Never \
+  --labels=app=nodejs-api \
   --dry-run=client -o yaml > pod-ecr.yaml
 ```
 
-**最小編集ポイント**
-1. `metadata.labels` を `app: nodejs-api` に変更
-2. コンテナ名を `nodejs-api-container` に変更
-3. `containerPort: 8000` を追記
-4. `imagePullSecrets` に `ecr-registry-secret` を追加
+**最小編集ポイント（3か所だけで済む）**
+1. コンテナ名を `nodejs-api-container` に変更
+2. `containerPort: 8000` を追記（`kubectl run` が付けない場合あり）
+3. `imagePullSecrets` に `ecr-registry-secret` を追加
+
+> 🔎 Pod ラベルはコマンドで付けたので **もう書き換え不要**。Service とのラベル不一致事故を防げます。
 
 ---
 
@@ -49,7 +52,7 @@ kubectl create -f pod-ecr.yaml --save-config   # 初回のみ
 ## ✅ Step 3 — Service YAML を生成
 
 ```bash
-# Service ひな形を生成（selector を *明示* して Pod ラベルと合わせるのがコツ）
+# Pod ラベル (app=nodejs-api) と同じ selector を明示
 kubectl expose pod nodejs-api-pod \
   --name=nodejs-api-service \
   --port=8000 --target-port=8000 \
@@ -59,6 +62,8 @@ kubectl expose pod nodejs-api-pod \
 ```
 
 *任意* で `nodePort: 30080` （30000‑32767 の範囲）を追記すると EC2 の SG で 30080 だけ開ければ済みます。
+
+> ⚠️ **Endpoints が空になる典型的原因** = Service の selector と Pod のラベルが一致していない。<br>このコマンドの `--selector=app=nodejs-api` を変えたら Pod 側のラベルも合わせること。
 
 ---
 
@@ -144,29 +149,24 @@ kubectl apply -f busybox-test.yaml   # create --save-config でも可
 
 ## 🔍 Step 7 — ClusterIP 経由で内部アクセス確認
 
-> **先に Pod が READY になるまで待機**
+> **Pod が READY になるまで待機し、Service に Endpoints が付くことを確認**
 >
 > ```bash
 > kubectl wait --for=condition=ready pod/nodejs-api-pod --timeout=60s
+> kubectl get endpoints nodejs-api-service -o wide   # Pod IP が表示されるはず
 > ```
->
-> これでアプリがリッスン開始する前に `wget` して *Connection refused* になる事故を防げます。
 
 ```bash
-# Service と Endpoints が正しく紐付いているか確認
-kubectl get svc nodejs-api-service -o wide
-kubectl get endpoints nodejs-api-service
-
 # busybox Pod から Service へリクエスト
 POD=$(kubectl get pod -l app=busybox-test -o jsonpath='{.items[0].metadata.name}')
 kubectl exec -it "$POD" -- wget -qO- http://nodejs-api-service:8000/ || echo "❌ 接続失敗"
 ```
 
 > **接続できない場合のチェックリスト**
-> 1. `kubectl logs nodejs-api-pod` でアプリが起動に失敗していないか
-> 2. `kubectl describe pod nodejs-api-pod` で containerPort が 8000 か確認
-> 3. `kubectl get endpoints nodejs-api-service` に Pod IP が載っているか
-> 4. ファイアウォールや SELinux が無効化された Minikube 内部なので基本不要ですが、Pod 側で LISTEN しているポートを `kubectl exec` + `netstat -lnpt` で確認
+> 1. Endpoints が `<none>` / 空 → selector とラベルの不一致を疑う
+> 2. Pod が CrashLoopBackOff → `kubectl logs` で原因確認
+> 3. `containerPort` 未設定 → Service から届いても Pod が LISTEN していない
+> 4. アプリ起動が遅い → `kubectl wait` の timeout を延長して再試行
 
 ---
 
