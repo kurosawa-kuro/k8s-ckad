@@ -1,167 +1,70 @@
-# 📘 Kubernetesチュートリアル: RBAC + ServiceAccount（bitnami/kubectl・Minikube 版 / CKAD 対応）
+# 📘 Minikube リセット → ECR 認証 → RBAC 検証（CKAD 対応・Namespace **ckad‑ns** 統一）
 
->  **前提** : コントロールプレーンは *Minikube*（docker ドライバ想定）、ネームスペースは `default` を使用します。
->  ローカル検証で kind ではなく Minikube を使う場合のコマンド差分を明示しています。
+このチュートリアルは **クラスターを完全にリセット** したうえで
 
----
+1. **ECR 認証シークレット** を用意し、
+2. **RBAC (ServiceAccount / Role / RoleBinding)** を作成し、
+3. `bitnami/kubectl` Pod で権限制御を検証
 
-## 📂 作業ディレクトリ構成（例）
-
-```bash
-~/dev/k8s-ckad/minikube/02-rbac/
-├── serviceaccount.yaml
-├── role.yaml
-├── rolebinding.yaml
-└── pod.yaml
-```
+するところまでをワンストップで解説します。
 
 ---
 
-## ✅ Step 1 — Minikube クラスター起動（既存のクラスターがあればスキップ）
+## 🔧 0. フルリセット用シェルスクリプト
 
 ```bash
-minikube start --profile ckad-rbac
-kubectl config use-context ckad-rbac   # プロファイル名と同じ context が作成される
+#!/usr/bin/env bash
+set -euo pipefail
+
+PROFILE="ckad-cluster"
+NS="ckad-ns"
+REGISTRY="986154984217.dkr.ecr.ap-northeast-1.amazonaws.com"
+
+# 0‑1. 既存リソース削除
+kubectl delete deployment,node,svc,pod,role,rolebinding,sa --all -n "$NS" --ignore-not-found
+kubectl delete secret ecr-registry-secret -n "$NS" --ignore-not-found
+kubectl delete namespace "$NS" --ignore-not-found || true
+minikube delete --profile "$PROFILE" || true
+
+# 0‑2. クラスター再作成
+minikube start --profile "$PROFILE"
+
+# 0‑3. docker-env 切替え (ECR ログイン用)
+eval "$(minikube -p "$PROFILE" docker-env)"
+
+# 0‑4. 名前空間作成
+kubectl create namespace "$NS"
+
+# 0‑5. ECR ログイン & Secret 作成
+aws ecr get-login-password --region ap-northeast-1 | \
+  docker login --username AWS --password-stdin "$REGISTRY"
+ECR_PASS=$(aws ecr get-login-password --region ap-northeast-1)
+kubectl create secret docker-registry ecr-registry-secret \
+  --docker-server="$REGISTRY" \
+  --docker-username=AWS \
+  --docker-password="$ECR_PASS" \
+  -n "$NS"
+
+# 0‑6. Context を ckad-ns に固定
+kubectl config set-context --current --namespace="$NS"
+
+echo "✅ リセット + 準備完了 (${PROFILE}/${NS})"
 ```
 
-> kind と違い、`kubectl cluster-info` の URL は `https://192.168.*:8443` になりますがチュートリアルには影響しません。
+> スクリプト保存後 `bash reset.sh` でフルクリーン環境が整います。
 
 ---
 
-## ✅ Step 2 — ServiceAccount を作成
+## 🏗️ RBAC リソースの作成手順
+
+> 以降は **Namespace `ckad‑ns`** にいる前提です（`kubectl config view --minify` で確認可）。
+
+### 1. ServiceAccount
 
 ```bash
-kubectl create serviceaccount app-sa \
-  --dry-run=client -o yaml > serviceaccount.yaml
+kubectl create serviceaccount app-sa -n ckad-ns --dry-run=client -o yaml > serviceaccount.yaml
 ```
 
-手直し（オプションでラベル付与）:
-```yaml
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: app-sa
-  labels:
-    app: express-api
-```
-
-```bash
-kubectl apply -f serviceaccount.yaml
-```
-
----
-
-## ✅ Step 3 — Role を作成（Pod の get/list 権限）
-
-```yaml
-# role.yaml
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  name: pod-reader
-  labels:
-    app: express-api
-rules:
-  - apiGroups: [""]        # "" = Core API グループ
-    resources: ["pods"]
-    verbs: ["get", "list"]
-```
-
-```bash
-kubectl apply -f role.yaml
-```
-
----
-
-## ✅ Step 4 — RoleBinding を作成
-
-```yaml
-# rolebinding.yaml
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: read-pods-binding
-  labels:
-    app: express-api
-subjects:
-  - kind: ServiceAccount
-    name: app-sa
-    namespace: default
-roleRef:
-  kind: Role
-  name: pod-reader
-  apiGroup: rbac.authorization.k8s.io
-```
-
-```bash
-kubectl apply -f rolebinding.yaml
-```
-
----
-
-## ✅ Step 5 — 検証用 Pod (bitnami/kubectl) を生成
-
-```bash
-kubectl run rbac-test \
-  --image=bitnami/kubectl \
-  --serviceaccount=app-sa \
-  --restart=Never --dry-run=client -o yaml \
-  -- sleep 3600 > pod.yaml
-```
-
-最小編集ポイント:
-* `metadata.labels` を足す場合は `app: express-api`
-
-```bash
-kubectl apply -f pod.yaml
-```
-
-Minikube では **containerd** ランタイムが既定なので、イメージプルに時間がかかる場合は `minikube image load bitnami/kubectl` で先にローカル読み込みしておくと高速化できます。
-
----
-
-## 🔍 Step 6 — RBAC 動作確認
-
-```bash
-# Pod が Ready になるまで待機
-kubectl wait --for=condition=ready pod/rbac-test --timeout=60s
-
-# 許可された操作 (get/list)
-kubectl exec rbac-test -- kubectl get pods -n default | head
-
-# 禁止された操作 (delete) → "forbidden" エラーになるはず
-kubectl exec rbac-test -- kubectl delete pod rbac-test || echo "✅ delete は禁止されている"
-```
-
----
-
-## 📝 CKAD でのハイライト
-
-| ポイント | コマンド例 | 解説 |
-|----------|-----------|------|
-| YAML ひな形生成 | `kubectl create serviceaccount` / `kubectl run --dry-run` | 手入力を最小化 |
-| Role / RoleBinding | Core vs 他 API グループ識別 | `apiGroups: [""]` で core |
-| 検証方法 | `kubectl exec -- kubectl get pods` | SA の権限で実際の API 呼び出し |
-| Minikube 特有 | `minikube image load` | containerd でプルを高速化 |
-
-これで **Minikube ベースの RBAC 検証チュートリアル** が完成です。CKAD 試験でも同じ手順で応用できます！
-
-
----
-
-## 📄 完成版 YAML 集
-
-> *Namespace は **`ckad-ns`** で統一* しています。ファイルを保存して
->
-> ```bash
-> kubectl apply -f serviceaccount.yaml
-> kubectl apply -f role.yaml
-> kubectl apply -f rolebinding.yaml
-> kubectl apply -f pod.yaml
-> ```
-> で一連の RBAC 検証が完了します。
-
-### 1. `serviceaccount.yaml`
 ```yaml
 apiVersion: v1
 kind: ServiceAccount
@@ -172,7 +75,8 @@ metadata:
     app: express-api
 ```
 
-### 2. `role.yaml`
+### 2. Role
+
 ```yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
@@ -187,7 +91,8 @@ rules:
     verbs: ["get", "list"]
 ```
 
-### 3. `rolebinding.yaml`
+### 3. RoleBinding
+
 ```yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -206,7 +111,8 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
 ```
 
-### 4. `pod.yaml`
+### 4. 検証用 Pod (bitnami/kubectl)
+
 ```yaml
 apiVersion: v1
 kind: Pod
@@ -217,12 +123,55 @@ metadata:
     app: express-api
 spec:
   serviceAccountName: app-sa
+  imagePullSecrets:
+    - name: ecr-registry-secret
   containers:
-    - name: nodejs-api-kubectl
+    - name: kubectl
       image: bitnami/kubectl
       command: ["sleep", "3600"]
   restartPolicy: Never
 ```
 
+```bash
+kubectl apply -f serviceaccount.yaml -f role.yaml -f rolebinding.yaml -f pod.yaml
+```
+
 ---
+
+## 🔍 動作確認
+
+```bash
+kubectl wait --for=condition=ready pod/rbac-test --timeout=60s
+
+# 許可: get/list
+kubectl exec rbac-test -- kubectl get pods -n ckad-ns | head
+
+# 禁止: delete
+kubectl exec rbac-test -- kubectl delete pod rbac-test || echo "✅ delete は Forbidden"
+```
+
+---
+
+## 📄 完成版 YAML 一覧
+
+> **全ファイル Namespace は `ckad-ns`** — そのまま `kubectl apply -f` で動きます。
+
+| ファイル | 内容 |
+|----------|------|
+| `serviceaccount.yaml` | ServiceAccount (`app-sa`) |
+| `role.yaml` | Role (`pod-reader`) |
+| `rolebinding.yaml` | RoleBinding (`read-pods-binding`) |
+| `pod.yaml` | 検証用 Pod (`rbac-test`) |
+
+（上記 YAML は本文セクション 1‑4 に掲載済み）
+
+---
+
+### ✅ CKAD でのカギ
+
+* **Namespace を揃える**  ─ Role / RoleBinding / SA / Pod で不一致だと Forbidden になりやすい
+* **`kubectl run --dry-run` で雛形生成 → 最小編集** で時短
+* **`kubectl exec` で API 実行** して RBAC を即検証
+
+これで「リセット済み Minikube → ECR 認証 → RBAC 検証」までが１コマンド＆一枚のドキュメントで完了します。
 

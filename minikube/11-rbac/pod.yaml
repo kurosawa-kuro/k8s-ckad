@@ -2,12 +2,15 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: rbac-test
+  namespace: ckad-ns
   labels:
     app: express-api
 spec:
   serviceAccountName: app-sa
+  imagePullSecrets:
+    - name: ecr-registry-secret
   containers:
-    - name: nodejs-api-kubectl
+    - name: kubectl
       image: bitnami/kubectl
       command: ["sleep", "3600"]
   restartPolicy: Never
