@@ -1,7 +1,6 @@
 # Ignore downloaded binaries
 kubectl
 minikube-linux-amd64
-minikube
 
 # Ignore OS specific files
 .DS_Store
