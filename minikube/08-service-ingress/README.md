@@ -49,9 +49,13 @@ kubectl create -f pod-ecr.yaml --save-config   # 初回のみ
 ## ✅ Step 3 — Service YAML を生成
 
 ```bash
+# Service ひな形を生成（selector を *明示* して Pod ラベルと合わせるのがコツ）
 kubectl expose pod nodejs-api-pod \
-  --name=nodejs-api-service --port=8000 --target-port=8000 \
-  --type=NodePort --dry-run=client -o yaml > service.yaml
+  --name=nodejs-api-service \
+  --port=8000 --target-port=8000 \
+  --type=NodePort \
+  --selector=app=nodejs-api \
+  --dry-run=client -o yaml > service.yaml
 ```
 
 *任意* で `nodePort: 30080` （30000‑32767 の範囲）を追記すると EC2 の SG で 30080 だけ開ければ済みます。
@@ -138,12 +142,31 @@ kubectl apply -f busybox-test.yaml   # create --save-config でも可
 
 ---
 
-## 🔍 Step 7 — ClusterIP 経由で内部アクセス確認 7 — ClusterIP 経由で内部アクセス確認
+## 🔍 Step 7 — ClusterIP 経由で内部アクセス確認
+
+> **先に Pod が READY になるまで待機**
+>
+> ```bash
+> kubectl wait --for=condition=ready pod/nodejs-api-pod --timeout=60s
+> ```
+>
+> これでアプリがリッスン開始する前に `wget` して *Connection refused* になる事故を防げます。
 
 ```bash
+# Service と Endpoints が正しく紐付いているか確認
 kubectl get svc nodejs-api-service -o wide
-kubectl exec -it busybox-test -- wget -qO- http://nodejs-api-service:8000/
+kubectl get endpoints nodejs-api-service
+
+# busybox Pod から Service へリクエスト
+POD=$(kubectl get pod -l app=busybox-test -o jsonpath='{.items[0].metadata.name}')
+kubectl exec -it "$POD" -- wget -qO- http://nodejs-api-service:8000/ || echo "❌ 接続失敗"
 ```
+
+> **接続できない場合のチェックリスト**
+> 1. `kubectl logs nodejs-api-pod` でアプリが起動に失敗していないか
+> 2. `kubectl describe pod nodejs-api-pod` で containerPort が 8000 か確認
+> 3. `kubectl get endpoints nodejs-api-service` に Pod IP が載っているか
+> 4. ファイアウォールや SELinux が無効化された Minikube 内部なので基本不要ですが、Pod 側で LISTEN しているポートを `kubectl exec` + `netstat -lnpt` で確認
 
 ---
 
