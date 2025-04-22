@@ -128,6 +128,23 @@ POD=$(kubectl get pod -l app=busybox-test -o jsonpath='{.items[0].metadata.name}
 kubectl exec "$POD" -- wget -qO- http://nodejs-api-service:8000/ || echo "❌ 接続失敗"
 ```
 
+詳細
+kubectl exec
+
+あなたのマシンから busybox‑test Pod のシェルを実行しています。
+
+ここで 最初にアクセスしているのは busybox Pod そのもの（内部に入る操作）です。
+
+busybox から wget
+
+busybox プロセスの中で wget コマンドを実行し、ClusterIP Service nodejs-api-service に HTTP リクエストを投げています。
+
+Service はラベル app=nodejs-api を持つ Pod（＝Express API コンテナ）にトラフィックを転送し、レスポンスが返ります。
+
+つまり「同じクラスター内で busybox → Service → Express API（Pod）」という 2 段階アクセスです。
+外部（ホスト OS や別サーバ）からはまだアクセスしておらず、NodePort 30080 や Ingress /api で試すのが次の段階になります。
+
+
 ---
 
 ## 🌐 Step 7 — NodePort / Ingress で外部アクセス
