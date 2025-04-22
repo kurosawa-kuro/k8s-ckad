@@ -4,20 +4,36 @@
 ---
 
 # 📘 Kubernetesチュートリアル: Pod + Ingressでnginxを外部公開  
-📂 `~/dev/01-pod-basic-ingress/`（CKAD × EC2 + minikube）
+📂 `~/dev/k8s-ckad/minikube/01-pod-basic-ingress/`（CKAD × EC2 + minikube）
 
 ---
 
-## ✅ 0. ディレクトリ準備
+## ✅ 0. minikube クラスター管理 (初回またはクリーンアップ時)
 
 ```bash
-mkdir -p ~/dev/01-pod-basic-ingress
-cd ~/dev/01-pod-basic-ingress
+# 既存クラスターの削除（必要な場合）
+minikube delete --profile ckad-cluster
+
+# 新規クラスターの作成
+minikube start --profile ckad-cluster
+
+# クラスター状態の確認
+minikube status -p ckad-cluster
+kubectl cluster-info
 ```
 
 ---
 
-## ✅ 1. nginx Deployment の作成
+## ✅ 1. ディレクトリ準備
+
+```bash
+mkdir -p ~/dev/k8s-ckad/minikube/01-pod-basic-ingress
+cd ~/dev/k8s-ckad/minikube/01-pod-basic-ingress
+```
+
+---
+
+## ✅ 2. nginx Deployment の作成
 
 ```bash
 kubectl create deployment nginx-deploy --image=nginx:latest --dry-run=client -o yaml > nginx-deploy.yaml
@@ -55,25 +71,20 @@ kubectl apply -f nginx-deploy.yaml
 
 ---
 
-## ✅ 2. ClusterIP Service の作成
+## ✅ 3. ClusterIP Service の作成 (コマンドで生成)
 
-```yaml
-# nginx-svc.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  name: nginx-service
-spec:
-  selector:
-    app: nginx
-  ports:
-    - protocol: TCP
-      port: 80
-      targetPort: 80
-  type: ClusterIP
+```bash
+kubectl expose deployment nginx-deploy \
+  --name=nginx-service \
+  --port=80 \
+  --target-port=80 \
+  --type=ClusterIP \
+  --dry-run=client -o yaml > nginx-svc.yaml
 ```
 
-保存して適用：
+生成された `nginx-svc.yaml` を確認（任意）
+
+適用：
 
 ```bash
 kubectl apply -f nginx-svc.yaml
@@ -81,26 +92,16 @@ kubectl apply -f nginx-svc.yaml
 
 ---
 
-## ✅ 3. Ingressリソース作成
+## ✅ 4. Ingressリソース作成 (コマンドで生成)
 
-```yaml
-# nginx-ingress.yaml
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: nginx-ingress
-spec:
-  rules:
-    - http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: nginx-service
-                port:
-                  number: 80
+```bash
+kubectl create ingress nginx-ingress \
+  --rule="/=nginx-service:80" \
+  --path-type=Prefix \
+  --dry-run=client -o yaml > nginx-ingress.yaml
 ```
+
+生成された `nginx-ingress.yaml` を確認（任意）
 
 適用：
 
@@ -110,7 +111,9 @@ kubectl apply -f nginx-ingress.yaml
 
 ---
 
-## ✅ 4. Ingress Controller の有効化（1度だけでOK）
+## ✅ 5. Ingress Controller の有効化（クラスターごとに1度だけ）
+
+**注意:** Ingress自体はCKAD試験範囲ですが、minikubeのIngressアドオンや外部アクセスは直接の試験範囲外です。ここではIngressリソースの作成と基本的な動作確認に焦点を当てます。
 
 ```bash
 # プロファイルを指定してIngressを有効化
@@ -123,62 +126,46 @@ minikube addons enable ingress -p ckad-cluster
 kubectl get pods -n ingress-nginx
 ```
 
----
+--- 
 
-## ✅ 5. `minikube tunnel` 実行（別ターミナル or tmux）
+## ✅ 6. Serviceへのアクセス確認 (kubectl port-forward)
+
+Ingress経由ではなく、Serviceに直接ポートフォワードしてアクセスを確認します。
 
 ```bash
-# プロファイルを指定してtunnelを実行
-minikube tunnel -p ckad-cluster
+# 別ターミナル or tmux で実行 (フォアグラウンドで実行されます)
+kubectl port-forward svc/nginx-service 8080:80
 ```
 
-これにより `Ingress` に外部IPが付与されます。
+**注意:** このコマンドは実行したターミナルがアクティブな間のみ有効です。Ctrl+Cで停止します。
 
-確認：
+--- 
+
+## ✅ 7. port-forward経由でのアクセス確認
+
+上記 `port-forward` を実行しているターミナルとは **別のターミナル** で実行します。
 
 ```bash
-kubectl get ingress nginx-ingress
+# EC2インスタンス内からlocalhost:8080にアクセス
+curl localhost:8080
 ```
 
----
+→ nginx の Welcome画面が表示されればServiceは正常に動作しています 🎉
 
-## ✅ 6. 外部ブラウザからアクセスする
+--- 
 
-### 6-1. EC2のセキュリティグループ設定
-
-1. AWSコンソールでEC2インスタンスのセキュリティグループを開く
-2. インバウンドルールを編集
-3. 以下のルールを追加：
-   - タイプ: HTTP (80)
-   - ソース: 0.0.0.0/0（すべてのIPからアクセス許可）
-   - 説明: Allow HTTP traffic for Ingress
-
-### 6-2. アクセス確認
-
-- EC2の **Elastic IP（またはパブリックIP）** を確認
-- `minikube tunnel` により `/` パスでアクセス可能に
-
-確認コマンド：
+## ✅ 8. クリーンアップ
 
 ```bash
-# ローカルからのアクセス確認（minikube IP使用）
-curl http://192.168.49.2/
+# port-forwardを実行しているターミナルで Ctrl+C を押して停止
 
-# 外部からのアクセス確認（EC2のパブリックIP使用）
-curl http://<EC2-IP>/
-```
-
-またはブラウザで `http://<EC2-IP>/`  
-→ nginx の Welcome画面が表示されれば成功 🎉
-
----
-
-## ✅ 7. クリーンアップ
-
-```bash
+# Kubernetesリソースの削除
 kubectl delete -f nginx-ingress.yaml
 kubectl delete -f nginx-svc.yaml
 kubectl delete -f nginx-deploy.yaml
+
+# minikube クラスターの削除（不要な場合）
+minikube delete --profile ckad-cluster
 ```
 
 ---
@@ -186,7 +173,7 @@ kubectl delete -f nginx-deploy.yaml
 ## ✅ ファイル構成（完成時）
 
 ```bash
-~/dev/01-pod-basic-ingress/
+~/dev/k8s-ckad/minikube/01-pod-basic-ingress/
 ├── nginx-deploy.yaml
 ├── nginx-svc.yaml
 └── nginx-ingress.yaml
@@ -194,13 +181,13 @@ kubectl delete -f nginx-deploy.yaml
 
 ---
 
-## 🎯 CKAD＋実運用ハイブリッドな学習に最適！
+## 🎯 CKAD学習ポイント
 
 | スキル           | 内容                       |
 |------------------|----------------------------|
-| 試験対策         | Deployment, Service, Ingress, YAML構成 |
-| 実運用準拠       | `minikube tunnel` + EC2パブリックIP外部公開 |
-| マニフェスト練習 | `kubectl create --dry-run=client -o yaml` を反復練習 |
+| 試験対策         | Deployment, Service, Ingress のYAML構成とコマンド生成 |
+| 基本動作確認     | `kubectl port-forward` を使ったServiceへのアクセス確認 |
+| マニフェスト練習 | `kubectl create/expose --dry-run=client -o yaml` の反復練習 |
 
 ---
 
@@ -212,8 +199,8 @@ kubectl delete -f nginx-deploy.yaml
    minikube profile list
    
    # プロファイルの指定（例：ckad-cluster）
+   minikube start --profile ckad-cluster
    minikube addons enable ingress -p ckad-cluster
-   minikube tunnel -p ckad-cluster
    ```
 
 2. プロファイルの切り替え
@@ -225,14 +212,12 @@ kubectl delete -f nginx-deploy.yaml
    minikube profile
    ```
 
-3. アクセス方法の違い
-   - ローカル（EC2内）からのアクセス: `http://192.168.49.2/`
-   - 外部からのアクセス: `http://<EC2-パブリックIP>/`
+3. アクセス方法
+   - このチュートリアルでは `kubectl port-forward` を使用し、`localhost:8080` (EC2インスタンス内) でアクセス確認します。
+   - Ingress経由の外部アクセスは `minikube tunnel` が必要となり、CKAD試験の直接的な範囲外です。
 
 4. トラブルシューティング
-   - 外部からアクセスできない場合: EC2のセキュリティグループを確認
-   - `minikube tunnel`が失敗する場合: プロファイルが正しく指定されているか確認
-   - Ingressコントローラーが起動しない場合: `kubectl describe pod -n ingress-nginx`で詳細を確認
+   - `port-forward` がエラーになる場合: Service (`nginx-service`) や Deployment (`nginx-deploy`) が正しく起動しているか確認 (`kubectl get svc,deploy,pods`)。
+   - Ingressコントローラーが起動しない場合: `kubectl describe pod -n ingress-nginx`で詳細を確認。
 
-必要ならこのチュートリアルをGitHub用Markdownテンプレにも変換します！  
-🔥次のステップは `/api` パスのInress対応、または `/v1` で複数サービスルーティングですか？
+🔥次のステップは `/api` パスのInress対応、または `/v1` で複数サービスルーティングの **設定のみ** を試しますか？ (アクセス確認は `port-forward` になります)
