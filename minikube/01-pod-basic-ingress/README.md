@@ -94,28 +94,13 @@ kubectl create ingress nginx-ingress \
 kubectl apply -f ingress.yaml
 ```
 
----
-
-## ✅ 5. Ingress Controller の有効化（クラスターごとに1度だけ）
-
-**注意:** Ingress自体はCKAD試験範囲ですが、minikubeのIngressアドオンや外部アクセスは直接の試験範囲外です。ここではIngressリソースの作成と基本的な動作確認に焦点を当てます。
-
-```bash
-# プロファイルを指定してIngressを有効化
-minikube addons enable ingress -p ckad-cluster
-```
-
-確認：
-
-```bash
-kubectl get pods -n ingress-nginx
-```
+**重要:** このステップでは Ingress リソースを作成するだけです。このチュートリアルでは Ingress Controller (例: Nginx Ingress Controller) の **導入や有効化は行いません**。動作確認は次のステップで `kubectl port-forward` を使用して Service に直接アクセスします。
 
 --- 
 
-## ✅ 6. Serviceへのアクセス確認 (kubectl port-forward)
+## ✅ 5. Serviceへのアクセス確認 (kubectl port-forward)
 
-Ingress経由ではなく、Serviceに直接ポートフォワードしてアクセスを確認します。
+Ingress経由ではなく、Service (`nginx-service`) に直接ポートフォワードしてアクセスを確認します。
 
 ```bash
 # 別ターミナル or tmux で実行 (フォアグラウンドで実行されます)
@@ -127,7 +112,7 @@ kubectl port-forward svc/nginx-service 8080:80
 
 --- 
 
-## ✅ 7. port-forward経由でのアクセス確認
+## ✅ 6. port-forward経由でのアクセス確認
 
 上記 `port-forward` を実行しているターミナルとは **別のターミナル** で実行します。
 
@@ -140,7 +125,7 @@ curl localhost:8080
 
 --- 
 
-## ✅ 8. クリーンアップ
+## ✅ 7. クリーンアップ
 
 ```bash
 # port-forwardを実行しているターミナルで Ctrl+C を押して停止
@@ -183,12 +168,11 @@ minikube delete --profile ckad-cluster
 2. **minikubeプロファイル:** 全てのチュートリアルで `ckad-cluster` を使用します。
    ```bash
    minikube start --profile ckad-cluster
-   minikube addons enable ingress -p ckad-cluster
    ```
 3. **ポートフォワード:** `kubectl port-forward` で使用するローカルポート (`8080`) は、他のプロセスと競合しないように注意してください。
-4. **アクセス方法:** このチュートリアルでは `kubectl port-forward` を使用し、`localhost:8080` (EC2インスタンス内) でアクセス確認します。
-5. **トラブルシューティング:**
+4. **アクセス方法:** このチュートリアルでは `kubectl port-forward` を使用し、`localhost:8080` (EC2インスタンス内) でServiceの動作を確認します。
+5. **Ingress Controller:** このチュートリアルではIngressリソースの作成のみ行い、Ingress Controllerの導入・有効化は行いません。実際のIngressのルーティング機能を試すにはControllerが必要です（CKAD試験範囲外）。
+6. **トラブルシューティング:**
    - `port-forward` がエラーになる場合: Service (`nginx-service`) や Deployment (`nginx-deploy`) が正しく起動しているか確認 (`kubectl get svc,deploy,pods`)。
-   - Ingressコントローラーが起動しない場合: `kubectl describe pod -n ingress-nginx`で詳細を確認。
 
-🔥次のステップは、この構成をベースに `/api` パス対応や複数サービスルーティングの設定に進みますか？ (アクセス確認は `port-forward` になります)
+🔥次のステップは、この構成をベースに `/api` パス対応や複数サービスルーティングの **Ingress設定のみ** を試しますか？ (アクセス確認は依然として `port-forward` になります)
