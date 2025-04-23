@@ -4,13 +4,13 @@
 このチュートリアルでは、Kubernetesの`PersistentVolume`（PV）と`PersistentVolumeClaim`（PVC）を利用して、Podのライフサイクルを超えてデータを永続化する方法を学びます。
 
 ## 使用イメージ
-- **メインイメージ**: Express API（ECR）
-- **ポート**: 8000
+- **メインイメージ**: busybox、nginx（パブリックイメージ）
+- **ポート**: 80（nginx）
 
 ## 作業ディレクトリ
 作業ディレクトリは次の通りです：
 ```bash
-~/dev/k8s-kind-ckad/07-volume-pvc
+~/dev/k8s-ckad/minikube/07-volume-pvc
 ```
 
 ## YAMLファイル作成手順
@@ -60,17 +60,15 @@ kind: Pod
 metadata:
   name: app-pod
   labels:
-    app: nodejs-api
+    app: nginx
 spec:
-  imagePullSecrets:
-  - name: ecr-registry-secret
   containers:
-  - name: app-container
-    image: 986154984217.dkr.ecr.ap-northeast-1.amazonaws.com/container-nodejs-api-8000:v1.0.5
+  - name: nginx-container
+    image: nginx:latest
     ports:
-    - containerPort: 8000
+    - containerPort: 80
     volumeMounts:
-    - mountPath: /usr/src/app/data
+    - mountPath: /usr/share/nginx/html
       name: app-storage
   volumes:
   - name: app-storage
@@ -90,20 +88,20 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      app: app-pod
+      app: nginx
   template:
     metadata:
       labels:
-        app: app-pod
+        app: nginx
     spec:
       containers:
-      - name: app-container
+      - name: nginx-container
         image: nginx:latest
         ports:
         - containerPort: 80
         volumeMounts:
         - name: app-storage
-          mountPath: /usr/src/app/data
+          mountPath: /usr/share/nginx/html
       volumes:
       - name: app-storage
         persistentVolumeClaim:
@@ -112,36 +110,51 @@ spec:
 
 ## 動作確認手順
 
-1. **PVとPVCの作成**:
+1. **Minikubeクラスターの起動確認**:
+```bash
+minikube status
+# 起動していない場合は
+minikube start
+```
+
+2. **PVとPVCの作成**:
 ```bash
 kubectl apply -f pv.yaml
 kubectl apply -f pvc.yaml
 ```
 
-2. **Podのデプロイ**:
+3. **Podのデプロイ**:
 ```bash
 kubectl apply -f pod-with-pvc.yaml
 # または
 kubectl apply -f deployment-with-pvc.yaml
 ```
 
-3. **PVとPVCの状態確認**:
+4. **PVとPVCの状態確認**:
 ```bash
 kubectl get pv
 kubectl get pvc
 ```
 
-4. **Pod内でファイルの書き込み**:
+5. **Pod内でファイルの書き込み**:
 ```bash
 kubectl exec -it app-pod -- sh
-echo "test data" > /usr/src/app/data/test.txt
+echo "test data" > /usr/share/nginx/html/test.txt
 ```
 
-5. **Pod削除後のデータ確認**:
+6. **Pod削除後のデータ確認**:
 ```bash
 kubectl delete pod app-pod
 kubectl apply -f pod-with-pvc.yaml
-kubectl exec -it app-pod -- cat /usr/src/app/data/test.txt
+kubectl exec -it app-pod -- cat /usr/share/nginx/html/test.txt
+```
+
+7. **Webアクセス確認（オプション）**:
+```bash
+# ポートフォワードの設定
+kubectl port-forward pod/app-pod 8080:80
+# 別ターミナルで
+curl http://localhost:8080/test.txt
 ```
 
 ## エラー対応
@@ -159,23 +172,7 @@ kubectl delete pvc app-pvc
 kubectl apply -f pvc.yaml
 ```
 
-### 2. イメージプル失敗
-ECRからのイメージプルに失敗する場合は、以下を確認します：
-
-1. **ECRログイン確認**:
-```bash
-aws ecr get-login-password --region ap-northeast-1 | docker login --username AWS --password-stdin 986154984217.dkr.ecr.ap-northeast-1.amazonaws.com
-```
-
-2. **Secret作成**:
-```bash
-kubectl create secret docker-registry ecr-registry-secret \
-  --docker-server=986154984217.dkr.ecr.ap-northeast-1.amazonaws.com \
-  --docker-username=AWS \
-  --docker-password=$(aws ecr get-login-password --region ap-northeast-1)
-```
-
-### 3. ボリュームマウントエラー
+### 2. ボリュームマウントエラー
 ボリュームマウントに失敗する場合は、以下を確認します：
 
 1. **PVの状態確認**:
@@ -190,7 +187,23 @@ kubectl describe pvc app-pvc
 
 3. **ホストパスの確認**:
 ```bash
+# Minikubeのホストマシンに接続
+minikube ssh
 ls -la /mnt/data
+```
+
+### 3. Minikube固有のトラブルシューティング
+
+1. **Minikubeの再起動**:
+```bash
+minikube stop
+minikube start
+```
+
+2. **Minikubeのリセット**:
+```bash
+minikube delete
+minikube start
 ```
 
 ## CKAD試験対策の重要ポイント
@@ -211,3 +224,64 @@ ls -la /mnt/data
    - エラーメッセージの理解
    - 適切な対処方法の選択
    - トラブルシューティングコマンドの活用
+
+## 追加演習（CKAD試験対策）
+
+1. **busyboxを使用したデータ永続化の確認**:
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: busybox-pod
+  labels:
+    app: busybox
+spec:
+  containers:
+  - name: busybox-container
+    image: busybox
+    command: ["/bin/sh", "-c", "while true; do sleep 3600; done"]
+    volumeMounts:
+    - mountPath: /data
+      name: app-storage
+  volumes:
+  - name: app-storage
+    persistentVolumeClaim:
+      claimName: app-pvc
+```
+
+2. **複数のPodで同じPVCを使用**:
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: busybox-pod2
+  labels:
+    app: busybox
+spec:
+  containers:
+  - name: busybox-container
+    image: busybox
+    command: ["/bin/sh", "-c", "while true; do sleep 3600; done"]
+    volumeMounts:
+    - mountPath: /data
+      name: app-storage
+  volumes:
+  - name: app-storage
+    persistentVolumeClaim:
+      claimName: app-pvc
+```
+
+3. **異なるアクセスモードのPVC作成**:
+```yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: app-pvc-rwo
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: standard
+```
