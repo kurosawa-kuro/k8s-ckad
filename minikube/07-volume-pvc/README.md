@@ -92,32 +92,96 @@ kubectl apply -f pvc.yaml
 kubectl apply -f pod-with-pvc.yaml
 ```
 
-4. **PVとPVCの状態確認**:
+3. **PVとPVCの状態確認**:
 ```bash
 kubectl get pv
 kubectl get pvc
 ```
 
-5. **Pod内でファイルの書き込み**:
+4. **Pod内でファイルの書き込み**:
 ```bash
 kubectl exec -it app-pod -- sh
 echo "test data" > /usr/share/nginx/html/test.txt
 ```
 
-6. **Pod削除後のデータ確認**:
+5. **Pod削除後のデータ確認**:
 ```bash
 kubectl delete pod app-pod
 kubectl apply -f pod-with-pvc.yaml
 kubectl exec -it app-pod -- cat /usr/share/nginx/html/test.txt
 ```
 
-7. **Webアクセス確認（オプション）**:
+## 実証方法：PVCの動作確認
+
+以下の手順で、PVCの動作を詳細に確認できます：
+
+### 1. PVCを使用したPodの作成とデータ書き込み
+
 ```bash
-# ポートフォワードの設定
-kubectl port-forward pod/app-pod 8080:80
-# 別ターミナルで
-curl http://localhost:8080/test.txt
+# PVCを使用するPodを作成
+kubectl apply -f pod-with-pvc.yaml
+
+# Pod内でデータを書き込む
+kubectl exec -it app-pod -- sh
+echo "test data" > /usr/share/nginx/html/test.txt
+exit
+
+# データが書き込まれたことを確認
+kubectl exec -it app-pod -- cat /usr/share/nginx/html/test.txt
 ```
+
+### 2. PVCのマウントを外したPodの作成
+
+`pod-without-pvc.yaml`を作成します：
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: app-pod-no-volume
+  labels:
+    app: nginx
+spec:
+  containers:
+  - name: nginx-container
+    image: nginx:latest
+    ports:
+    - containerPort: 80
+  # volumeMountsとvolumesセクションをコメントアウト
+```
+
+```bash
+# 元のPodを削除
+kubectl delete pod app-pod
+
+# ボリュームマウントなしのPodを作成
+kubectl apply -f pod-without-pvc.yaml
+
+# データにアクセスできないことを確認
+kubectl exec -it app-pod-no-volume -- ls /usr/share/nginx/html/test.txt
+# ファイルが見つからないエラーが表示される
+```
+
+### 3. 再度PVCをマウントしたPodの作成
+
+```bash
+# ボリュームマウントなしのPodを削除
+kubectl delete pod app-pod-no-volume
+
+# 元のPod（PVCマウントあり）を再作成
+kubectl apply -f pod-with-pvc.yaml
+
+# データが再びアクセスできることを確認
+kubectl exec -it app-pod -- cat /usr/share/nginx/html/test.txt
+# "test data"が表示される
+```
+
+この実証により、以下のことが確認できます：
+
+1. PVCはPodとは独立したリソースである
+2. Podが削除されても、PVCとデータは保持される
+3. PodからPVCのマウントを外すと、データにアクセスできない
+4. 再度PVCをマウントすると、以前のデータにアクセスできる
 
 ## エラー対応
 
