@@ -3,6 +3,19 @@
 ## 目的
 このチュートリアルでは、Kubernetesの`PersistentVolume`（PV）と`PersistentVolumeClaim`（PVC）を利用して、Podのライフサイクルを超えてデータを永続化する方法を学びます。
 
+✔ 混乱ポイントは符号の向きだけ。
+
+PVC は「最低限〇〇欲しい」の宣言
+
+PV は「最大で〇〇使っていいよ」の広告
+
+バインド条件は PV の上限が PVC の下限を満たす こと
+
+キーワード	覚え方
+PersistentVolume	Parent（親が財布を握って上限を決める）
+PersistentVC	Child（子が「最低このお小遣いほしい」と請求）
+バインド条件	Parent ≥ Child なら OK
+
 ## 使用イメージ
 - **メインイメージ**: busybox、nginx（パブリックイメージ）
 - **ポート**: 80（nginx）
