@@ -76,38 +76,6 @@ spec:
       claimName: app-pvc
 ```
 
-4. **Deploymentの作成（オプション）**:
-   `deployment-with-pvc.yaml`を作成します：
-
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: app-deployment
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: nginx
-  template:
-    metadata:
-      labels:
-        app: nginx
-    spec:
-      containers:
-      - name: nginx-container
-        image: nginx:latest
-        ports:
-        - containerPort: 80
-        volumeMounts:
-        - name: app-storage
-          mountPath: /usr/share/nginx/html
-      volumes:
-      - name: app-storage
-        persistentVolumeClaim:
-          claimName: app-pvc
-```
-
 ## 動作確認手順
 
 1. **Minikubeクラスターの起動確認**:
@@ -126,8 +94,6 @@ kubectl apply -f pvc.yaml
 3. **Podのデプロイ**:
 ```bash
 kubectl apply -f pod-with-pvc.yaml
-# または
-kubectl apply -f deployment-with-pvc.yaml
 ```
 
 4. **PVとPVCの状態確認**:
@@ -249,29 +215,7 @@ spec:
       claimName: app-pvc
 ```
 
-2. **複数のPodで同じPVCを使用**:
-```yaml
-apiVersion: v1
-kind: Pod
-metadata:
-  name: busybox-pod2
-  labels:
-    app: busybox
-spec:
-  containers:
-  - name: busybox-container
-    image: busybox
-    command: ["/bin/sh", "-c", "while true; do sleep 3600; done"]
-    volumeMounts:
-    - mountPath: /data
-      name: app-storage
-  volumes:
-  - name: app-storage
-    persistentVolumeClaim:
-      claimName: app-pvc
-```
-
-3. **異なるアクセスモードのPVC作成**:
+2. **異なるアクセスモードのPVC作成**:
 ```yaml
 apiVersion: v1
 kind: PersistentVolumeClaim

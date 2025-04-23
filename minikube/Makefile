@@ -1,5 +1,5 @@
-reset.sh:
+reset:
 	./reset.sh
 
-reset2.sh:
+reset2:
 	./reset2.sh
