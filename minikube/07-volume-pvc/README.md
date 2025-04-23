@@ -85,14 +85,10 @@ minikube status
 minikube start
 ```
 
-2. **PVとPVCの作成**:
+2. **PVとPVC,Podの作成**:
 ```bash
 kubectl apply -f pv.yaml
 kubectl apply -f pvc.yaml
-```
-
-3. **Podのデプロイ**:
-```bash
 kubectl apply -f pod-with-pvc.yaml
 ```
 
