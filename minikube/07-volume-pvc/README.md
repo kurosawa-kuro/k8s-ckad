@@ -3,18 +3,30 @@
 ## 目的
 このチュートリアルでは、Kubernetesの`PersistentVolume`（PV）と`PersistentVolumeClaim`（PVC）を利用して、Podのライフサイクルを超えてデータを永続化する方法を学びます。
 
-✔ 混乱ポイントは符号の向きだけ。
+## PV ↔ PVC 容量ルール - 一瞬で思い出すチートシート
 
-PVC は「最低限〇〇欲しい」の宣言
+| 役者 | 覚え方 | セリフ | 数式イメージ |
+|------|--------|--------|--------------|
+| **PV**<br>(PersistentVolume) | **Parent**<br>“親” | 「ここまでなら使っていいよ」<br>＝ **上限** を提示 | `上限 = capacity.storage` |
+| **PVC**<br>(PersistentVolumeClaim) | **Child**<br>“子” | 「最低これだけ欲しい！」<br>＝ **下限** を要求 | `下限 = resources.requests.storage` |
 
-PV は「最大で〇〇使っていいよ」の広告
+> **バインド条件**  
+> **Parent (上限) ≥ Child (下限)** なら契約成立  
+> → PVC `Bound`、Pod で使用可能。
 
-バインド条件は PV の上限が PVC の下限を満たす こと
+---
 
-キーワード	覚え方
-PersistentVolume	Parent（親が財布を握って上限を決める）
-PersistentVC	Child（子が「最低このお小遣いほしい」と請求）
-バインド条件	Parent ≥ Child なら OK
+### 暗記フック（端的バージョン）
+
+```
+PV = Parent（財布のヒモ）
+PVC = Child（おこづかい請求）
+契約は「Parent ≥ Child」で OK
+```
+
+- **符号の向きだけが混乱ポイント**  
+  - “≥” を思い出せば解決。
+- こう覚えれば、容量トラブルのほとんどは即判断できます。
 
 ## 使用イメージ
 - **メインイメージ**: busybox、nginx（パブリックイメージ）
