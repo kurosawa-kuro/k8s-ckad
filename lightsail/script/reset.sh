@@ -151,8 +151,8 @@ main() {
   log "=== Minikube リセットスクリプト開始 ==="
   cleanup
   start_cluster
-  setup_namespace
-  setup_ecr_auth
+  # setup_namespace
+  # setup_ecr_auth
   verify
   log "=== スクリプト完了 🎉 ==="
 }
