@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: "2025-04-29T12:55:10Z"
+  generation: 1
+  labels:
+    app: rolling
+  name: rolling
+  namespace: rolling-update
+  resourceVersion: "3166"
+  uid: be8ad94c-cd55-4cb0-a285-27a1b11308db
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 5
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: rolling
+  strategy:
+    rollingUpdate:
+      maxSurge: 20%
+      maxUnavailable: 20%
+    type: RollingUpdate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: rolling
+    spec:
+      containers:
+      - image: redis:6.2-alpine
+        imagePullPolicy: IfNotPresent
+        name: redis
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+status: {}
