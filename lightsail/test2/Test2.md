@@ -1,3 +1,6 @@
+../script/reset.sh 
+
+
 kubectl explain pod --recursive | less
 
 

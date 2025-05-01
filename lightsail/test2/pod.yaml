@@ -3,15 +3,12 @@ kind: Pod
 metadata:
   creationTimestamp: null
   labels:
-    run: test
-  name: test
+    run: testpod
+  name: testpod
 spec:
   containers:
-  - command:
-    - sleep
-    - "3600"
-    image: busybox
-    name: test
+  - image: nginx
+    name: testpod
     resources: {}
   dnsPolicy: ClusterFirst
   restartPolicy: Always
