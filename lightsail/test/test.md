@@ -78,7 +78,7 @@
 kubectl apply -f https://raw.githubusercontent.com/nz-cloud-udemy/ckad-questions/main/practice-questions/1/resources.yaml
 
 問題
-selector名前空間では、pod-1からpod-10までの10個のPodが実行されています。それぞれのPodには、app: "Pod名"のラベルが付与されています。以下のラベルを持つPodのログを、/etc/pods.logに出力して下さい。
+filter名前空間では、pod-1からpod-10までの10個のPodが実行されています。それぞれのPodには、app: "Pod名"のラベルが付与されています。以下のラベルを持つPodのログを、/etc/pods.logに出力して下さい。
 
 app: pod-3
 app: pod-7
