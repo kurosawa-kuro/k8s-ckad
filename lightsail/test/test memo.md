@@ -515,6 +515,7 @@ pay名前空間では、payment  Deploymentがpayment-svcというServiceによ�
 
 ---------------------------------------------------------
 ・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・
+k scale deploy -n pay payment --replicas=4
 
 
 ・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・
@@ -541,8 +542,10 @@ server名前空間で作成されているwebapp Podは、bitnami/expressイメ�
 
 ---------------------------------------------------------
 ・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・
-
-
+k get svc -n server
+curl controlplain:30500
+k describe pod -n server webapp
+k describe svc -n server webapp
 ・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・
 
 
@@ -565,7 +568,16 @@ server名前空間で作成されているwebapp Podは、bitnami/expressイメ�
 
 ---------------------------------------------------------
 ・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・
+kubectl explain deploy --recursive | grep RollingUpdate
+kubectl explain deploy.spec.strategy --recursive | grep RollingUpdate
+kubectl explain deploy.spec.strategy.rollingUpdate
 
+k get deploy -o wide
+k set image deploy rolling redis=redis:7.2-alpine
+
+k get deploy -o wide
+
+k rollout undo deploy rolling
 
 ・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・
 
@@ -605,7 +617,10 @@ Readiness Probeでは、80番ポートを使用して/readyエンドポイント
 
 ---------------------------------------------------------
 ・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・
-
+kubectl explain pod. --recursive | grep Probe
+kubectl explain pod. --recursive | grep livenessProbe
+kubectl explain pod.spec.containers --recursive | grep livenessProb
+kubectl explain pod.spec.containers.livenessProbe
 
 ・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・
 
