@@ -1,0 +1,27 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  creationTimestamp: null
+  name: ps-cron
+  namespace: cron
+spec:
+  jobTemplate:
+    metadata:
+      creationTimestamp: null
+      name: ps-cron
+    spec:
+      template:
+        metadata:
+          creationTimestamp: null
+        spec:
+          containers:
+          - command:
+            - sh
+            - -c
+            - ps aux
+            image: alpine
+            name: ps-cron
+            resources: {}
+          restartPolicy: OnFailure
+  schedule: '*/1 * * * *'
+status: {}
