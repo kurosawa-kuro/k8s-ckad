@@ -270,12 +270,25 @@ service名前空間で実行されるpod-reader Deploymentは、5秒ごとに"ku
 
 ---------------------------------------------------------
 ・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・
-k logs deployment/pod-reader --since=15s
+# 直近15秒のログを確認してエラー内容を特定
+k logs deployment/pod-reader --since=15s  
+
+# default ServiceAccount でPod一覧が取得できるか検証
 k auth can-i list pods --as=system:serviceaccount:service:default
+
+# 現在Namespace内に存在するServiceAccountを確認（候補を探す）
 k get sa
+
+# pod-reader-saがPod一覧取得できるか検証（正解候補）
 k auth can-i list pods --as=system:serviceaccount:service:pod-reader-sa
+
+# Deployment 'pod-reader' に正しいServiceAccountを割り当てる
 k set sa deploy pod-reader pod-reader-sa
+
+# 修正を反映するためDeploymentをローリング再起動
 k rollout restart deploy pod-reader
+
+# 再起動後のログを確認し、エラー解消を確認
 k logs deployment/pod-reader --since=15s
 ・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・
 
