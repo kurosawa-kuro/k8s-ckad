@@ -207,7 +207,7 @@ ambassador名前空間で稼働しているfrontend Podは、ポート番号8080
 ---------------------------------------------------------
 ・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・
 k logs frontend --since=15s
-
+k create cm haproxy-cfg --from-file=haproxy.cfg
 
 
 
@@ -540,12 +540,17 @@ server名前空間で作成されているwebapp Podは、bitnami/expressイメ�
 
 ---------------------------------------------------------
 
+
+
 ---------------------------------------------------------
 ・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・
-k get svc -n server
-curl controlplain:30500
-k describe pod -n server webapp
-k describe svc -n server webapp
+kubectl get svc
+kubectl describe pod webapp
+kubectl describe svc websvc
+kubectl get endpoints websvc
+kubectl get nodes -o wide
+
+kubectl edit svc websvc
 ・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・
 
 
