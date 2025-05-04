@@ -1,5 +1,12 @@
 ../script/reset-hard.sh
 
+alias k=kubectl
+export do="--dry-run=client -o yaml"
+alias kn='kubectl config set-context --current --namespace '
+alias ke='k explain'
+alias kgp='k get po'
+alias kaf='k apply -f'
+
 この大量の問題群を精査して、  
 **CKAD本番直前2日間で「先に完璧にすべき問題」と「後回しにしていい問題」**を明確に振り分けます。
 
@@ -112,16 +119,19 @@ credential名前空間で、login Deploymentが実行するコンテナは環境
 
 ---------------------------------------------------------
 ・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・
-k exec -it deployments/login --env
-
-k get secret creds -o yaml
-
-k rollout restart deploy login
+# 全リソース一覧を確認（Pod, Service, Deploymentなどすべて）
+kubectl get all  #  deployment.apps/loginを取得
 
 
+# Podに入って環境変数を確認（Deployment経由ではなくPod名で）
+kubectl exec -it deployment.apps/login -- /bin/sh
+env
 
+# Secretの内容（base64エンコード状態）を確認
+kubectl get secret creds -o yaml  # Secret 'creds' の値をYAML形式で表示
 
-
+# Secret/ConfigMap変更を反映するためにDeploymentを再起動
+kubectl rollout restart deployment.apps/login # Deployment 'login' をローリング再起動
 ・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・
 
 =========================================================
