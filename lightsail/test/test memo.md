@@ -316,11 +316,12 @@ network名前空間では、デフォルトでは全てのPodの内向き（ingr
 
 ---------------------------------------------------------
 ・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・
-k get pods -o wide
-k exec web -- sh -c "curl -m 2 aaa.aaa.a.a"
-k get netpol apinet -o yaml
-k label pods web role=backend
-k exec web -- sh -c "curl -m 2 aaa.aaa.a.a"
+k get pods -o wide     # 全てのPodをノードやIPなど詳細情報付きで一覧表示
+k exec web -- sh -c "curl -m 2 aaa.aaa.a.a"   # web Pod内で指定IPへ2秒タイムアウト付きでHTTPリクエストを実行
+k get netpol apinet -o yaml  # apinetというNetworkPolicyの設定内容をYAML形式で取得
+k label pods web role=backend  # web Podに role=backend ラベルを付与してNetworkPolicyのセレクター条件を満たす
+k exec web -- sh -c "curl -m 2 aaa.aaa.a.a"   # ラベル付与後、再度web PodからAPI Podへの接続を確認
+
 
 
 ・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・
@@ -376,20 +377,37 @@ k describe limitranges -n resource-management cpu-resource-constraint
 
 ---------------------------------------------------------
 ・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・
-kubectl create cronjob ps-cron -n cron --image=alpine --schedule="*/1 * * * *" --dry-run=client -o yaml   -- sh -c "ps aux" > ps-cron.yaml
+kubectl create cronjob ps-cron -n cron \
+  --image=alpine \
+  --schedule="*/1 * * * *" \
+  --dry-run=client -o yaml \
+  -- sh -c "ps aux" > ps-cron.yaml
+# ps-cron という名前の CronJob マニフェストを cron 名前空間向けに生成（1分毎実行、alpine で ps aux、適用はせず YAML 出力）
 
 kubectl explain cj --recursive | grep success
+# CronJob（cj）リソース定義全体を再帰的に表示し、’success’ に関係するフィールドを抽出
+
 kubectl explain cj.spec | grep success
+# CronJob.spec のドキュメントを表示し、’success’ に関する説明行を検索
+
 kubectl explain cj.spec
+# CronJob.spec フィールドの詳細な説明を表示
 
 kubectl explain cj.spec.successfulJobsHistoryLimit
-
+# CronJob.spec.successfulJobsHistoryLimit の意味と制限値設定方法を表示
 
 kubectl explain cj --recursive | grep active
+# CronJob リソース定義全体から ’active’ に関するフィールドを抽出
+
 kubectl explain cj.spec.jobTemplate.spec --recursive | grep active
+# CronJob.jobTemplate.spec 内で ’active’ に関わるフィールドを再帰的に検索
+
 kubectl explain cj.spec.jobTemplate.spec
+# CronJob.spec.jobTemplate.spec フィールドのドキュメントを表示
 
 kubectl explain cj.spec.activeDeadlineSeconds
+# CronJob.spec.activeDeadlineSeconds の説明を表示（Job を強制終了する秒数制限）
+
 
 ・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・
 
@@ -455,16 +473,20 @@ NET_ADMIN capabilityを付与する。
 ---------------------------------------------------------
 ---------------------------------------------------------
 ・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・
-kubectl explain pod --recursive | grep SecurityContext
+kubectl explain pod --recursive | grep SecurityContext  
+# Pod リソース定義全体を再帰的に表示し、SecurityContext に関するフィールドを抽出  
 
+kubectl explain pod --recursive | grep Privilege  
+# Pod 定義内から Privilege に関連するフィールドを検索  
 
+kubectl explain pod.spec.containers.securityContext --recursive | grep Privilege  
+# コンテナの securityContext 下で Privilege 関連フィールドを再帰的に抽出  
 
-kubectl explain pod --recursive | grep Privilege
-kubectl explain pod.spec.containers.securityContext --recursive | grep Privilege
-kubectl explain pod.spec.containers.securityContext.allowPrivilegeEscalation
+kubectl explain pod.spec.containers.securityContext.allowPrivilegeEscalation  
+# allowPrivilegeEscalation フラグの意味と設定方法を表示  
 
-kubectl get pod -n context secure-redis -o jsonpath="{.spec.containers[0].securityContext}"
-
+kubectl get pod -n context secure-redis -o jsonpath="{.spec.containers[0].securityContext}"  
+# context 名前空間の secure-redis Pod からコンテナの securityContext 設定を JSON パスで取得  
 
 ・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・
 
@@ -500,11 +522,15 @@ info-ingressを変更し、http://path-ingress.info:31100/menuを使用してmen
 
 ---------------------------------------------------------
 ・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・
-curl http://path-ingress.info:31100/contact
-curl http://path-ingress.info:31100/menu
+curl http://path-ingress.info:31100/contact    # info-ingress 経由で contact-app にリクエストし疎通確認
+curl http://path-ingress.info:31100/menu       # menu-app 用のパス設定後に動作を検証するためのリクエスト
 
-kubectl explain ingress.spec --recursive | grep service
-kubectl explain ingress.spec.rules.http.paths.backend
+kubectl explain ingress.spec --recursive | grep service    
+# Ingress.spec 以下の service フィールド定義を再帰的に検索して表示
+
+kubectl explain ingress.spec.rules.http.paths.backend   
+# Ingress の HTTP ルールで backend ブロック（Service 名／ポート指定）の詳細を表示
+
 
 ・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・
 
@@ -555,6 +581,23 @@ k scale deploy -n pay payment --replicas=4
 
 ・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・
 
+k scale deployment payment -n pay --replicas=4      # payment Deployment を4レプリカにスケールし、合計レプリカ数を5に調整
+k get deployment payment -n pay -o yaml > payment-canary.yaml   # 既存 payment Deployment のマニフェストをファイルに出力
+# --- payment-canary.yaml を以下のように編集 ---
+#   metadata.name: payment-canary         ← Deployment 名を変更
+#   metadata.labels:
+#     app: payment                       ← 元の app ラベルをそのまま維持
+#     app-version: canary                ← canary 用バージョンラベルを追加
+#   spec.replicas: 1                     ← レプリカ数を全体の20％(5中1)に設定
+#   spec.template.metadata.labels:       ← Pod テンプレートにも同じラベルを追加
+#     app: payment
+#     app-version: canary
+k apply -f payment-canary.yaml    # payment-canary Deployment を作成し、canary Pod を1台起動
+k patch svc payment-svc -n pay -p '{"spec":{"selector":{"app":"payment"}}}'  # payment-svc の selector を app=payment のみに設定し、canary Pod を含める
+k get endpoints payment-svc -n pay   # payment-svc に登録された Pod 数が5（4 stable + 1 canary）であることを確認
+k exec -n pay deploy/payment -- sh -c "curl -m 2 http://payment-svc:80"   # payment-svc 経由でアプリにリクエストし、正常応答を検証
+
+
 
 =========================================================
 問題13
@@ -579,13 +622,13 @@ server名前空間で作成されているwebapp Podは、bitnami/expressイメ�
 
 ---------------------------------------------------------
 ・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・
-kubectl get svc
-kubectl describe pod webapp
-kubectl describe svc websvc
-kubectl get endpoints websvc
-kubectl get nodes -o wide
+kubectl get svc                                      # server名前空間の全Serviceを一覧表示し、websvcのタイプやポート設定を確認  
+kubectl describe pod webapp -n server                 # webapp Podのラベルやステータス、ポートを詳細表示  
+kubectl describe svc websvc -n server                  # websvc Serviceのセレクターやポート設定、エンドポイント情報を確認  
+kubectl get endpoints websvc -n server                 # websvc Serviceに紐づくPodのIPリストを表示し、未登録かどうかを確認  
+kubectl get nodes -o wide                              # 各ノードのアドレスや条件を確認し、外部IPが必要かどうかを判断  
+kubectl edit svc websvc -n server                      # websvc Serviceのマニフェストを編集し、セレクターやポート設定を修正  
 
-kubectl edit svc websvc
 ・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・
 
 
@@ -608,16 +651,27 @@ kubectl edit svc websvc
 
 ---------------------------------------------------------
 ・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・
-kubectl explain deploy --recursive | grep RollingUpdate
-kubectl explain deploy.spec.strategy --recursive | grep RollingUpdate
-kubectl explain deploy.spec.strategy.rollingUpdate
+kubectl explain deploy --recursive | grep RollingUpdate  
+# Deployment リソース定義全体を再帰的に表示し、RollingUpdate に関するフィールドを抽出して確認
 
-k get deploy -o wide
-k set image deploy rolling redis=redis:7.2-alpine
+kubectl explain deploy.spec.strategy --recursive | grep RollingUpdate  
+# Deployment.spec.strategy 以下を再帰的に表示し、RollingUpdate タイプの設定箇所を検索
 
-k get deploy -o wide
+kubectl explain deploy.spec.strategy.rollingUpdate  
+# strategy.rollingUpdate フィールド（maxSurge、maxUnavailable 等）の詳細情報を表示
 
-k rollout undo deploy rolling
+k get deploy -n rolling-update -o wide  
+# rolling-update 名前空間の全 Deployment を詳細情報付きで一覧表示（レプリカ数や戦略タイプ確認用）
+
+k set image deploy rolling -n rolling-update redis=redis:7.2-alpine  
+# rolling Deployment のコンテナイメージを redis:7.2-alpine にアップデートしてローリングアップデートを開始
+
+k get deploy -n rolling-update -o wide  
+# イメージ更新後、Deployment の現在のリビジョンやレプリカ状態を再度確認
+
+k rollout undo deploy rolling -n rolling-update  
+# rolling Deployment を一つ前のリビジョンにロールバックして、元の redis:6.2-alpine イメージに戻す
+
 
 ・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・
 
@@ -657,10 +711,18 @@ Readiness Probeでは、80番ポートを使用して/readyエンドポイント
 
 ---------------------------------------------------------
 ・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・
-kubectl explain pod. --recursive | grep Probe
-kubectl explain pod. --recursive | grep livenessProbe
-kubectl explain pod.spec.containers --recursive | grep livenessProb
-kubectl explain pod.spec.containers.livenessProbe
+kubectl explain pod. --recursive | grep Probe  
+# Podリソース定義を再帰的に表示し、Probeに関連するすべてのフィールドを抽出
+
+kubectl explain pod. --recursive | grep livenessProbe  
+# Podリソース定義から livenessProbe フィールドの説明行を検索
+
+kubectl explain pod.spec.containers --recursive | grep livenessProb  
+# Pod.spec.containers 以下の定義を再帰的に調べ、livenessProb* にマッチする項目を抽出
+
+kubectl explain pod.spec.containers.livenessProbe  
+# コンテナの livenessProbe 設定（HTTP GET パラメータやタイミング）の詳細ドキュメントを表示
+
 
 ・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・
 
@@ -752,6 +814,21 @@ session名前空間では、redis-deployという名前のDeploymentが作成さ
 
 ---------------------------------------------------------
 ・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・
+kubectl get pods -n session
+# イメージ名誤りで Pod が Pending または ImagePullBackOff になっていることを確認
+
+kubectl describe pod -n session $(kubectl get pod -n session -o name)
+# Events 欄に ErrImagePull や ImagePullBackOff, “not found” のエラーが出ているはず
+
+kubectl set image deployment/redis-deploy \
+  -n session \
+  redis=redis:alpine
+
+# 新しい Pod が起動して Ready になることを確認
+kubectl rollout status deployment/redis-deploy -n session
+
+# Pod が正常に動作しているか
+kubectl get pods -n session
 
 
 ・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・・
