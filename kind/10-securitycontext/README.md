@@ -2,6 +2,19 @@
 
 ---
 
+✅ イメージで理解：数字の意味を名前に例えると
+
+数字	実際の意味（たとえ）
+uid=0	Linuxのroot（＝神様ユーザー）
+uid=1000	appuser 的な非特権ユーザー
+fsGroup=2000	appgroup 的な共有グループ
+✅ まとめ：あなたが覚えておけばいいのはこれだけ！
+
+フィールド名	意味	よく使う値
+runAsUser	実行ユーザーUID	1000（非root）
+runAsNonRoot	root禁止を強制	true
+fsGroup	ファイルアクセス用のグループID	2000（共有書き込み用）
+
 ### 初期YAML生成コマンド
 
 まず、`kubectl run`を使ってYAMLの初期テンプレートを生成します。
