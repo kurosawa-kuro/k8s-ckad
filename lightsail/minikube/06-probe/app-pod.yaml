@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: app-pod
+  labels:
+    app: nodejs-api
+spec:
+  imagePullSecrets:
+    - name: ecr-registry-secret  # ECR認証のための秘密情報
+  containers:
+  - image: 986154984217.dkr.ecr.ap-northeast-1.amazonaws.com/container-nodejs-api-8000:v1.0.5
+    name: app-container
+    ports:
+    - containerPort: 8000
+    livenessProbe:
+      httpGet:
+        path: /healthz
+        port: 8000
+      initialDelaySeconds: 10  # より適切な遅延時間に変更
+      periodSeconds: 5
+      failureThreshold: 3
+      timeoutSeconds: 2  # プローブのタイムアウト時間を設定
+    readinessProbe:
+      httpGet:
+        path: /delay
+        port: 8000
+      initialDelaySeconds: 15  # より遅延時間を長めに設定
+      periodSeconds: 5
+      failureThreshold: 3
+      timeoutSeconds: 5  # プローブのタイムアウト時間を設定
+  restartPolicy: Always

@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app-version: canary
+    app: payment
+  name: payment-canary
+  namespace: pay
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: payment
+      app-version: canary
+  template:
+    metadata:
+      labels:
+        app: payment
+        app-version: canary
+    spec:
+      containers:
+      - image: nginx:alpine
+        name: nginx
+        volumeMounts:
+        - name: labels
+          mountPath: /usr/share/nginx/html
+      volumes:
+      - name: labels
+        downwardAPI:
+          items:
+            - path: "index.html"
+              fieldRef:
+                fieldPath: metadata.labels

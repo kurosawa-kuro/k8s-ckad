@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    run: web
+  name: web
+  namespace: probes
+spec:
+  restartPolicy: Never
+  containers:
+  - image: nginx:alpine
+    name: web
+    volumeMounts:
+      - name: conf
+        mountPath: /etc/nginx/templates
+    livenessProbe:
+      httpGet:
+        path: /live
+        port: 80
+      initialDelaySeconds: 5
+      periodSeconds: 10
+    readinessProbe:
+      httpGet:
+        path: /ready
+        port: 80
+      initialDelaySeconds: 15
+      periodSeconds: 10
+  volumes:
+    - name: conf
+      configMap:
+        name: ng-cm

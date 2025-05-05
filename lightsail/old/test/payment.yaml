@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app-version: stable
+    app: payment
+  name: payment
+  namespace: pay
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: payment
+      app-version: stable
+  template:
+    metadata:
+      labels:
+        app: payment
+        app-version: stable
+    spec:
+      containers:
+      - image: nginx:alpine
+        name: nginx
+        volumeMounts:
+        - name: labels
+          mountPath: /usr/share/nginx/html
+      volumes:
+      - name: labels
+        downwardAPI:
+          items:
+            - path: "index.html"
+              fieldRef:
+                fieldPath: metadata.labels
