@@ -1,3 +1,4 @@
+cd /home/wsl/dev/k8s-ckad/wsl/test/
 ../script/reset-hard.sh
 
 alias k=kubectl
