@@ -48,6 +48,10 @@ trap 'error "想定外のエラーで終了 (#$LINENO)"; exit 1' ERR
 # 🧹  1) クリーンアップ
 ###############################################################################
 cleanup() {
+  log "Minikubeの権限を修正"
+  run sudo chown -R "$USER" "$HOME/.minikube"
+  run chmod -R u+wrx "$HOME/.minikube"
+
   log "クリーンアップを開始"
   [[ -f $DEPLOYMENT_FILE ]] \
     && run kubectl delete -f "$DEPLOYMENT_FILE" --ignore-not-found
