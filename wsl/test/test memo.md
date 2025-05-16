@@ -143,6 +143,8 @@ kubectl rollout restart deployment.apps/login # Deployment 'login' をローリ�
 環境準備
 cd /home/wsl/dev/k8s-ckad/wsl/test/
 ../script/reset-hard.sh
+minikube delete
+minikube start --ports=32100:32100
 
 1. wgetコマンドを使用して、以下のURLからファイルをダウンロードして下さい。
 
@@ -158,7 +160,8 @@ kubectl apply -f https://raw.githubusercontent.com/nz-cloud-udemy/ckad-questions
 
 問題
 
-web名前空間で実行されているmy-web Deploymentは、nginxイメージコンテナを実行するPodを管理しています。DeploymentはNodePortタイプのサービスで公開されており、curl controlplane:32100を実行してコンテナに接続できます。コンテナが表示するindex.htmlファイルを、updated_index.htmlに変更する必要があります。
+web名前空間で実行されているmy-web Deploymentは、nginxイメージコンテナを実行するPodを管理しています。DeploymentはNodePortタイプのサービスで公開されており、curl controlplane:32100を実行してコンテナに接続できます。
+コンテナが表示するindex.htmlファイルを、updated_index.htmlに変更する必要があります。
 
 index.htmlをキー、updated_index.htmlファイルをバリューとして保持するConfigMapを作成し、/usr/share/nginx/htmlディレクトリにマウントされているConfigMapを更新して下さい。ConfigMapの名前はnew-index-cmとします
 

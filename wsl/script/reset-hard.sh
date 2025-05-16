@@ -14,6 +14,11 @@ DEPLOYMENT_FILE="${DEPLOYMENT_FILE:-deployment.yaml}"
 MINIKUBE_DRIVER="docker"   # 既定：docker（containerd の場合でも可）
 CONTAINER_RUNTIME=""       # 空なら Minikube 既定（最新版は containerd）
 
+# Minikube リソース設定（環境変数で上書き可）
+MINIKUBE_CPUS="${MINIKUBE_CPUS:-8}"           # 推奨: 6-8 cores
+MINIKUBE_MEMORY="${MINIKUBE_MEMORY:-10000}"   # 推奨: 10 GiB (MiB単位)
+MINIKUBE_DISK_SIZE="${MINIKUBE_DISK_SIZE:-20000}"  # 20 GiB
+
 ###############################################################################
 # 🖍️  ログ用装飾
 ###############################################################################
@@ -73,7 +78,16 @@ cleanup() {
 ###############################################################################
 start_cluster() {
   log "Minikube クラスターを起動"
-  local args=(start --profile "$CLUSTER_NAME" --driver "$MINIKUBE_DRIVER")
+  local args=(
+    start
+    --profile "$CLUSTER_NAME"
+    --driver "$MINIKUBE_DRIVER"
+    --cpus "$MINIKUBE_CPUS"
+    --memory "$MINIKUBE_MEMORY"
+    --disk-size "$MINIKUBE_DISK_SIZE"
+    --cache-images
+    --disable-optimizations  # 不要なアドオンを無効化して起動を高速化
+  )
   [[ -n $CONTAINER_RUNTIME ]] && args+=(--container-runtime "$CONTAINER_RUNTIME")
   run minikube "${args[@]}"
 
@@ -132,6 +146,9 @@ while [[ $# -gt 0 ]]; do
     --driver)          MINIKUBE_DRIVER="$2"; shift 2 ;;
     --containerd)      CONTAINER_RUNTIME="containerd"; shift ;;
     --runtime)         CONTAINER_RUNTIME="$2"; shift 2 ;;
+    --cpus)            MINIKUBE_CPUS="$2"; shift 2 ;;
+    --memory)          MINIKUBE_MEMORY="$2"; shift 2 ;;
+    --disk-size)       MINIKUBE_DISK_SIZE="$2"; shift 2 ;;
     --help|-h)
       cat <<EOF
 usage: $(basename "$0") [options]
@@ -139,6 +156,9 @@ usage: $(basename "$0") [options]
 --driver <docker|kvm2|...>     Minikube ドライバ（既定: docker）
 --runtime <docker|containerd>  コンテナランタイム
 --containerd                   同上（ショートカット）
+--cpus <number>               Minikube に割り当てる CPU コア数（既定: 8）
+--memory <number>             Minikube に割り当てるメモリ量（MiB単位、既定: 10000）
+--disk-size <number>          Minikube のディスクサイズ（MiB単位、既定: 20000）
 EOF
       exit 0
       ;;
