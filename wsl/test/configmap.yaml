@@ -1,9 +1,0 @@
-apiVersion: v1
-data:
-  index.html: |
-    new
-kind: ConfigMap
-metadata:
-  creationTimestamp: null
-  name: new-index-cm
-  namespace: web
