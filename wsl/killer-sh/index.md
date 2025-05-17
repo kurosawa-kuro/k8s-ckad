@@ -1,12 +1,26 @@
+cd /home/wsl/dev/k8s-ckad/wsl/script
+make reset-heavy
+cd /home/wsl/dev/k8s-ckad/wsl/killer-sh
+
+alias k=kubectl
+export do="--dry-run=client -o yaml"
+alias kn='kubectl config set-context --current --namespace '
+
 ====================================
 Q1
 
 The DevOps team would like to get the list of all Namespaces in the cluster.  
-Get the list and save it to /opt/course/1/namespaces
+Get the list and save it to ~/dev/k8s-ckad/wsl/killer-sh/namespaces
 ====================================
 
 
-
+s-ckad/wsl/killer-sh$ k get ns -A > ~/dev/k8s-ckad/wsl/killer-sh/namespaces
+wsl@DESKTOP-M40H3KM:~/dev/k8s-ckad/wsl/killer-sh$ cat ~/dev/k8s-ckad/wsl/killer-sh/namespaces
+NAME              STATUS   AGE
+default           Active   3m3s
+kube-node-lease   Active   3m3s
+kube-public       Active   3m3s
+kube-system       Active   3m3s
 
 
 ====================================
@@ -19,10 +33,29 @@ Create a single Pod of image httpd:2.4.41-alpine in Namespace default.
 The Pod should be named pod1 and the container should be named pod1-container.
 
 Your manager would like to run a command manually on occasion to output the status of that exact Pod.  
-Please write a command that does this into /opt/course/2/pod1-status-command.sh on ckad5601. The command should use kubectl.
+Please write whilea command that does this into /home/wsl/dev/k8s-ckad/wsl/killer-sh/pod1-status-command.sh on ckad5601. The command should use kubectl.
 
 ====================================
 
+40H3KM:~/dev/k8s-ckad/wsl/killer-sh$ while true end; kubectl get pod pod1; end; > pod1-status-command.sh
+> ^C
+wsl@DESKTOP-M40H3KM:~/dev/k8s-ckad/wsl/killer-sh$ cat pod1.yaml 
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: null
+  labels:
+    run: pod1
+  name: pod1
+spec:
+  containers:
+  - image: httpd:2.4.41-alpine
+    name: pod1-container 
+    resources: {}
+  dnsPolicy: ClusterFirst
+  restartPolicy: Always
+status: {}
+wsl@DESKTOP-M40H3KM:~/dev/k8s-ckad/wsl/killer-sh$ 
 
 
 
@@ -32,7 +65,7 @@ Q3
 Question 3:
 Solve this question on instance: ssh ckad7326
 
-Team Neptune needs a Job template located at /opt/course/3/job.yaml.  
+Team Neptune needs a Job template located at job.yaml.  
 This Job should run image busybox:1.31.0 and execute sleep 2 && echo done.  
 It should be in namespace neptune, run a total of 3 times and should execute 2 runs in parallel.
 
@@ -41,7 +74,9 @@ The job should be named neb-new-job and the container neb-new-job-container.
 
 ====================================
 
-
+k create job neb-new-job --image=busybox:1.31.0 -n neptune     -- "sleep 2 && echo done"    --dry-run=client -o yaml > job.yaml
+completion:3
+parallel:2
 
 
 ====================================
@@ -59,9 +94,9 @@ Team Mercury asked you to perform some operations using Helm, all in Namespace m
 4. There seems to be a broken release, stuck in pending-install state. Find it and delete it
 
 ====================================
-
-
-
+helm uninstall internal-issue-report-apiv1  
+helm upgrade internal-issue-report-apiv2 bitnami/nginx
+helm install internal-issue-report-apache bitnami/apache
 
 ====================================
 Q5
@@ -72,9 +107,31 @@ Solve this question on instance: ssh ckad7326
 Team Neptune has its own ServiceAccount named neptune-sa-v2 in Namespace neptune.  
 A coworker needs the token from the Secret that belongs to that ServiceAccount.  
 Write the base64 decoded token to file /opt/course/5/token on ckad7326.
+
+candidate@ckad7326:~$ k get sa -n neptune
+NAME            SECRETS   AGE
+default         0         51d
+neptune-sa-v2   0         51d
+candidate@ckad7326:~$ k describe -n neptune sa neptune-sa-v2
+Name:              neptune-sa-v2
+Namespace:         neptune
+Labels:            <none>
+Annotations:       <none>
+Image pull secrets: <none>
+Mountable secrets:  <none>
+Tokens:             neptune-secret-1
+Events:             <none>
+candidate@ckad7326:~$
+
 ====================================
+neptune-secret-1をbase64デコードした値を
+ServiceAccountのeditでtokenを更新？
+tokenに書き込み
 
-
+ler-sh$ echo neptune-secret-1 | base64 > token
+wsl@DESKTOP-M40H3KM:~/dev/k8s-ckad/wsl/killer-sh$ cat token 
+bmVwdHVuZS1zZWNyZXQtMQo=
+wsl@DESKTOP-M40H3KM:~/dev/k8s-ckad/wsl/killer-sh$ 
 
 
 ====================================
@@ -90,7 +147,7 @@ The Pod should run the command `touch /tmp/ready && sleep 1d`, which will create
 
 ====================================
 
-
+k run pod pod6 --image=busybox:1.31.0 --dry-run=client -oyaml --command -- sh -c    "touch /tmp/ready && sleep 1d"     > pod6.yaml
 
 
 ====================================

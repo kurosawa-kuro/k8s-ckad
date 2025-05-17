@@ -1,5 +1,7 @@
 cd /home/wsl/dev/k8s-ckad/wsl/test/
 ../script/reset-hard.sh
+cd ../script
+make reset-heavy
 
 alias k=kubectl
 export do="--dry-run=client -o yaml"
