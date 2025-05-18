@@ -108,30 +108,38 @@ Team Neptune has its own ServiceAccount named neptune-sa-v2 in Namespace neptune
 A coworker needs the token from the Secret that belongs to that ServiceAccount.  
 Write the base64 decoded token to file /opt/course/5/token on ckad7326.
 
-candidate@ckad7326:~$ k get sa -n neptune
-NAME            SECRETS   AGE
-default         0         51d
-neptune-sa-v2   0         51d
-candidate@ckad7326:~$ k describe -n neptune sa neptune-sa-v2
-Name:              neptune-sa-v2
-Namespace:         neptune
-Labels:            <none>
-Annotations:       <none>
-Image pull secrets: <none>
-Mountable secrets:  <none>
-Tokens:             neptune-secret-1
-Events:             <none>
-candidate@ckad7326:~$
+01-neptune-sa.yaml
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: neptune
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: neptune-sa-v2
+  namespace: neptune
+  # 必須ではないが明示しておくと分かりやすい
+secrets:
+  - name: neptune-secret-1    # ↓②で作成する Secret 名を参照
+
+
+
+02-neptune-secret.yaml
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: neptune-secret-1
+  namespace: neptune
+  annotations:
+    kubernetes.io/service-account.name: neptune-sa-v2
+type: kubernetes.io/service-account-token
+
 
 ====================================
-neptune-secret-1をbase64デコードした値を
-ServiceAccountのeditでtokenを更新？
-tokenに書き込み
 
-ler-sh$ echo neptune-secret-1 | base64 > token
-wsl@DESKTOP-M40H3KM:~/dev/k8s-ckad/wsl/killer-sh$ cat token 
-bmVwdHVuZS1zZWNyZXQtMQo=
-wsl@DESKTOP-M40H3KM:~/dev/k8s-ckad/wsl/killer-sh$ 
 
 
 ====================================
@@ -160,6 +168,108 @@ The board of Team Neptune decided to take over control of one e-commerce webserv
 
 Search for the correct Pod in Namespace saturn and move it to Namespace neptune. It doesn’t matter if you shut it down and spin it up again; it probably hasn’t any customers anyways.
 
+07-namespaces.yaml
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: saturn
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: neptune
+
+
+07-webservers-saturn.yaml 
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: webserver-sat-001
+  namespace: saturn
+  labels:
+    id: webserver-sat-001
+spec:
+  containers:
+    - name: nginx
+      image: nginx:1.16.1-alpine
+      ports: [{ containerPort: 80 }]
+  restartPolicy: Always
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: webserver-sat-002
+  namespace: saturn
+  labels:
+    id: webserver-sat-002
+spec:
+  containers:
+    - name: nginx
+      image: nginx:1.16.1-alpine
+      ports: [{ containerPort: 80 }]
+  restartPolicy: Always
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: webserver-sat-003                # ← これが “my-happy-shop”
+  namespace: saturn
+  labels:
+    id: webserver-sat-003
+  annotations:
+    description: >-
+      this is the server for the e-Commerce System my-happy-shop
+spec:
+  containers:
+    - name: nginx
+      image: nginx:1.16.1-alpine
+      ports: [{ containerPort: 80 }]
+  restartPolicy: Always
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: webserver-sat-004
+  namespace: saturn
+  labels:
+    id: webserver-sat-004
+spec:
+  containers:
+    - name: nginx
+      image: nginx:1.16.1-alpine
+      ports: [{ containerPort: 80 }]
+  restartPolicy: Always
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: webserver-sat-005
+  namespace: saturn
+  labels:
+    id: webserver-sat-005
+spec:
+  containers:
+    - name: nginx
+      image: nginx:1.16.1-alpine
+      ports: [{ containerPort: 80 }]
+  restartPolicy: Always
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: webserver-sat-006
+  namespace: saturn
+  labels:
+    id: webserver-sat-006
+spec:
+  containers:
+    - name: nginx
+      image: nginx:1.16.1-alpine
+      ports: [{ containerPort: 80 }]
+  restartPolicy: Always
+
 ====================================
 
 
@@ -172,6 +282,54 @@ Question 8:
 Solve this question on instance: ssh ckad7326
 
 There is an existing Deployment named api-new-c32 in Namespace neptune. A developer made an update to the Deployment but the updated version never came online. Check the Deployment’s revision history, find a revision that works, then rollback to it. Could you tell Team Neptune what the error was so it doesn’t happen again?
+
+08-namespace.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: neptune
+
+
+08-deploy-v1.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-new-c32
+  namespace: neptune
+spec:
+  replicas: 3
+  selector:
+    matchLabels: { app: api-new-c32 }
+  template:
+    metadata:
+      labels: { app: api-new-c32 }
+    spec:
+      containers:
+        - name: backend
+          image: nginx:1.23-alpine        # ✅ pull 可能
+          ports: [{ containerPort: 80 }]
+
+08-deploy-v2-bad.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-new-c32
+  namespace: neptune
+spec:
+  replicas: 3
+  selector:
+    matchLabels: { app: api-new-c32 }
+  template:
+    metadata:
+      labels: { app: api-new-c32 }
+      annotations:
+        commit: bad-v2                  # ← ★ わざと 1 行追加して差分を確実化
+    spec:
+      containers:
+        - name: backend
+          image: nginx:9.99-does-not-exist   # ❌ ImagePullBackOff
+          ports: [{ containerPort: 80 }]
+
 
 ====================================
 
@@ -190,6 +348,29 @@ Convert the Pod into a Deployment named holy-api with 3 replicas and delete the 
 
 In addition, the new Deployment should set `allowPrivilegeEscalation: false` and `privileged: false` in the container’s securityContext.  
 Please create the Deployment and save its YAML under /opt/course/9/holy-api-deployment.yaml.
+
+09-pluto-namespace.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: pluto
+
+09-holy-api-pod.yaml 
+apiVersion: v1
+kind: Pod
+metadata:
+  name: holy-api
+  namespace: pluto
+  labels:
+    app: holy-api
+spec:
+  containers:
+    - name: api
+      image: nginx:1.23-alpine   # 例:軽量で動作確認しやすい
+      ports:
+        - containerPort: 80
+
+
 
 ====================================
 
