@@ -48,7 +48,7 @@ It should be in namespace neptune, run a total of 3 times and should execute 2 r
 Start the Job and check its history. Each pod created by the Job should have the label id: awesome-job.  
 The job should be named neb-new-job and the container neb-new-job-container.
 
-kubectl apply -f q20-01.yaml,q20-02.yaml,q20-03.yaml
+kubectl apply -f q3-01.yaml
 
 # q3-01.yaml
 apiVersion: v1
@@ -73,7 +73,7 @@ Team Mercury asked you to perform some operations using Helm, all in Namespace m
    The Deployment should have two replicas—set these via Helm-values during install  
 4. There seems to be a broken release, stuck in pending-install state. Find it and delete it
 
-kubectl apply -f q20-01.yaml,q20-02.yaml,q20-03.yaml
+kubectl apply -f q4.yaml
 
 # q4.yaml
 apiVersion: v1
@@ -92,7 +92,7 @@ Team Neptune has its own ServiceAccount named neptune-sa-v2 in Namespace neptune
 A coworker needs the token from the Secret that belongs to that ServiceAccount.  
 Write the base64 decoded token to file /opt/course/5/token on ckad7326.
 
-kubectl apply -f q20-01.yaml,q20-02.yaml,q20-03.yaml
+kubectl apply -f q5.yaml
 
 # q5.yaml
 apiVersion: v1
@@ -149,7 +149,7 @@ The board of Team Neptune decided to take over control of one e-commerce webserv
 
 Search for the correct Pod in Namespace saturn and move it to Namespace neptune. It doesn’t matter if you shut it down and spin it up again; it probably hasn’t any customers anyways.
 
-kubectl apply -f q20-01.yaml,q20-02.yaml,q20-03.yaml
+kubectl apply -f q7-01.yaml,q7-02.yaml
 
 # q7-01.yaml
 apiVersion: v1
@@ -263,7 +263,7 @@ Solve this question on instance: ssh ckad7326
 
 There is an existing Deployment named api-new-c32 in Namespace neptune. A developer made an update to the Deployment but the updated version never came online. Check the Deployment’s revision history, find a revision that works, then rollback to it. Could you tell Team Neptune what the error was so it doesn’t happen again?
 
-kubectl apply -f q20-01.yaml,q20-02.yaml,q20-03.yaml
+kubectl apply -f q8-01.yaml,q8-02.yaml,q8-03.yaml
 
 # q8-01.yaml
 apiVersion: v1
@@ -329,7 +329,7 @@ Convert the Pod into a Deployment named holy-api with 3 replicas and delete the 
 In addition, the new Deployment should set `allowPrivilegeEscalation: false` and `privileged: false` in the container’s securityContext.  
 Please create the Deployment and save its YAML under /opt/course/9/holy-api-deployment.yaml.
 
-kubectl apply -f q20-01.yaml,q20-02.yaml,q20-03.yaml
+kubectl apply -f q9-01.yaml,q9-02.yaml,q20-03.yaml
 
 # q9-01.yaml
 apiVersion: v1
@@ -439,9 +439,7 @@ The claim should request storage of 3Gi, an accessMode of ReadWriteOnce and shou
 The provisioner moon-retainer will be created by another team, so it's expected that the PVC will not bind yet.  
 Confirm this by writing the log message from the PVC into file /opt/course/13/pvc-126-reason.
 
-
-kubectl apply -f q20-01.yaml,q20-02.yaml,q20-03.yaml
-
+kubectl apply -f q13.yaml
 
 # q13.yaml
 apiVersion: v1
@@ -467,7 +465,7 @@ There is existing YAML for another Secret at /opt/course/14/secret2.yaml; create
 Your changes should be saved under /opt/course/14/secret-handler-new.yaml on ckad9043.  
 Both Secrets should only be available in Namespace moon.
 
-kubectl apply -f q20-01.yaml,q20-02.yaml,q20-03.yaml
+kubectl apply -f q14-01.yaml,q14-02.yaml
 
 # q14-01.yaml
 apiVersion: v1
@@ -535,7 +533,7 @@ To complete, please create a ConfigMap called configmap-web-moon-html containing
 The Deployment web-moon is already configured to work with this ConfigMap and serve its content.  
 Test the nginx configuration, for example using curl from a temporary nginx:alpine Pod.
 
-kubectl apply -f q20-01.yaml,q20-02.yaml,q20-03.yaml
+kubectl apply -f q15.yaml
 
 # q15.yaml
 apiVersion: v1
@@ -569,7 +567,7 @@ Create a sidecar container named logger-con, image busybox:1.31.0, which mounts 
 This way it can be picked up by kubectl logs.  
 Check if the logs of the new container reveal something about the missing data incidents.
 
-kubectl apply -f q20-01.yaml,q20-02.yaml,q20-03.yaml
+kubectl apply -f q16.yaml
 
 # q16.yaml
 apiVersion: apps/v1
@@ -630,7 +628,7 @@ For this test we ignore that it doesn't contain valid HTML.
 The InitContainer should be using image busybox:1.31.0.  
 Test your implementation, for example using curl from a temporary nginx:alpine Pod.
 
-kubectl apply -f q20-01.yaml,q20-02.yaml,q20-03.yaml
+kubectl apply -f q17.yaml
 
 # q17.yaml
 apiVersion: apps/v1
@@ -686,7 +684,7 @@ There seems to be an issue in Namespace mars where the ClusterIP service manager
 You can test this with curl manager-api-svc.mars:4444 from a temporary nginx:alpine Pod.  
 Check for the misconfiguration and apply a fix.
 
-kubectl apply -f q20-01.yaml,q20-02.yaml,q20-03.yaml
+kubectl apply -f q18-01.yaml,q18-02.yaml,q18-03.yaml,q18-04.yaml
 
 # q18-01.yaml
 apiVersion: v1
@@ -767,7 +765,7 @@ Change this Service to a NodePort one to make it available on all nodes on port 
 Test the NodePort Service using the internal IP of all available nodes and the port 30100 using curl; you can reach the internal node IPs directly from your main terminal.  
 On which nodes is the Service reachable? On which node is the Pod running?
 
-kubectl apply -f q20-01.yaml,q20-02.yaml,q20-03.yaml
+kubectl apply -f q19-01.yaml,q19-02.yaml,q19-03.yaml
 
 # q19-01.yaml
 apiVersion: v1
@@ -902,7 +900,7 @@ Each container should have a memory request of 20Mi and a memory limit of 50Mi.
 Team Neptune has its own ServiceAccount neptune-sa-v2 under which the Pods should run.  
 The Deployment should be in Namespace neptune.
 
-kubectl apply -f q20-01.yaml,q20-02.yaml,q20-03.yaml
+kubectl apply -f q21.yaml
 
 # q21.yaml
 apiVersion: v1
@@ -927,7 +925,7 @@ Team Sunny needs to identify some of their Pods in namespace sun.
 They ask you to add a new label protected: true to all Pods with an existing label type: worker or type: runner.  
 Also add an annotation protected: "do not delete this pod" to all Pods having the new label protected: true.
 
-kubectl apply -f q20-01.yaml,q20-02.yaml,q20-03.yaml
+kubectl apply -f q22-01.yaml,q22-02.yaml,q22-03.yaml
 
 # q22-01.yaml
 # neptune / sun それぞれの Namespace を作成
