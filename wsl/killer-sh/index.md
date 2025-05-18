@@ -567,6 +567,27 @@ Confirm this by writing the log message from the PVC into file /opt/course/13/pv
 ====================================
 
 
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: moon-retain
+provisioner: moon-retainer          # ★必須
+reclaimPolicy: Retain               # ★要件
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: moon-pvc-126
+  namespace: moon
+spec:
+  accessModes:
+    - ReadWriteOnce                 # ★要件
+  resources:
+    requests:
+      storage: 3Gi                  # ★要件
+  storageClassName: moon-retain     # ★要件
+
+
 
 
 ====================================
@@ -584,7 +605,56 @@ There is existing YAML for another Secret at /opt/course/14/secret2.yaml; create
 Your changes should be saved under /opt/course/14/secret-handler-new.yaml on ckad9043.  
 Both Secrets should only be available in Namespace moon.
 
+secret1.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: secret1
+  namespace: moon
+type: Opaque            # ← 文字列そのまま扱えるよう stringData を使用
+stringData:
+  user: test
+  pass: pwd
+
+secret-handler-new.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: secret-handler
+  namespace: moon
+  labels:                # (元のラベルがあればそのまま)
+    app: secret-handler
+spec:
+  containers:
+  - name: secret-handler
+    image: # ... 元の image ...
+    # ... (command / args / ports など既存定義) ...
+    env:
+      - name: SECRET1_USER
+        valueFrom:
+          secretKeyRef:
+            name: secret1
+            key: user
+      - name: SECRET1_PASS
+        valueFrom:
+          secretKeyRef:
+            name: secret1
+            key: pass
+    volumeMounts:
+      - name: secret2-vol
+        mountPath: /tmp/secret2
+        readOnly: true
+      # ... 既存 volumeMount があればここに残す ...
+  volumes:
+    - name: secret2-vol
+      secret:
+        secretName: secret2
+        defaultMode: 0440
+    # ... 既存 volumes があればここに残す ...
+
 ====================================
+
+
 
 
 
@@ -601,6 +671,15 @@ To complete, please create a ConfigMap called configmap-web-moon-html containing
 
 The Deployment web-moon is already configured to work with this ConfigMap and serve its content.  
 Test the nginx configuration, for example using curl from a temporary nginx:alpine Pod.
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: configmap-web-moon-html
+  namespace: moon
+data:
+  index.html: |
+    <!-- ここに /opt/course/15/web-moon.html の内容を貼り付ける -->
 
 ====================================
 
@@ -624,6 +703,47 @@ Create a sidecar container named logger-con, image busybox:1.31.0, which mounts 
 This way it can be picked up by kubectl logs.  
 Check if the logs of the new container reveal something about the missing data incidents.
 
+cleaner-new.yaml 
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cleaner
+  namespace: mercury
+  labels:
+    app: cleaner
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cleaner
+  template:
+    metadata:
+      labels:
+        app: cleaner
+    spec:
+      containers:
+      # --- メイン処理コンテナ ----------------------------------
+      - name: cleaner-con
+        image: busybox:1.31.0        # 既存イメージが不明な場合のサンプル
+        command: ["sh", "-c", "while true; do echo \"$(date) - cleaning job ran\" >> /var/log/cleaner/cleaner.log; sleep 10; done"]
+        volumeMounts:
+        - name: logs-vol
+          mountPath: /var/log/cleaner
+      # --- 追加するサイドカー ----------------------------------
+      - name: logger-con
+        image: busybox:1.31.0
+        command: ["sh", "-c", "tail -F /var/log/cleaner/cleaner.log"]
+        volumeMounts:
+        - name: logs-vol
+          mountPath: /var/log/cleaner
+      # --------------------------------------------------------
+      volumes:
+      - name: logs-vol
+        emptyDir: {}                 # ログ保存用に両コンテナが共有
+
+
+
+
 ====================================
 
 
@@ -646,6 +766,46 @@ For this test we ignore that it doesn't contain valid HTML.
 The InitContainer should be using image busybox:1.31.0.  
 Test your implementation, for example using curl from a temporary nginx:alpine Pod.
 
+test-init-container.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-init
+  namespace: mars          # 好きな Namespace があれば変更してください
+  labels:
+    app: test-init
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: test-init
+  template:
+    metadata:
+      labels:
+        app: test-init
+    spec:
+      volumes:
+        - name: content-vol      # ★ nginx と InitContainer で共有するボリューム
+          emptyDir: {}
+      # ---- これから追加する InitContainer 用のスペース -----------------
+      # initContainers:
+      #   - name: init-con
+      #     image: busybox:1.31.0
+      #     command: ["sh", "-c", "echo 'check this out!' > /usr/share/nginx/html/index.html"]
+      #     volumeMounts:
+      #       - name: content-vol
+      #         mountPath: /usr/share/nginx/html
+      # ------------------------------------------------------------------
+      containers:
+        - name: nginx
+          image: nginx:1.17.3-alpine
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: content-vol
+              mountPath: /usr/share/nginx/html
+
+
 ====================================
 
 
@@ -661,6 +821,68 @@ There seems to be an issue in Namespace mars where the ClusterIP service manager
 
 You can test this with curl manager-api-svc.mars:4444 from a temporary nginx:alpine Pod.  
 Check for the misconfiguration and apply a fix.
+
+mars-namespace.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: mars
+
+manager-api-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: manager-api-deployment
+  namespace: mars
+  labels:
+    app: manager-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: manager-api
+  template:
+    metadata:
+      labels:
+        app: manager-api
+    spec:
+      containers:
+        - name: manager-api
+          image: nginx:1.17.3-alpine
+          ports:
+            - containerPort: 80
+
+manager-api-svc.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: manager-api-svc
+  namespace: mars
+spec:
+  type: ClusterIP
+  selector:
+    app: manager-api
+  ports:
+    - name: http
+      port: 4444          # ← クライアントがアクセスするポート
+      targetPort: 8888    # ← ★ Pod 側のポートと“ズレている”ため通信できない
+      protocol: TCP
+
+curl-test.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: curl-test
+  namespace: mars
+spec:
+  containers:
+    - name: curl
+      image: nginx:alpine
+      command: ["sh", "-c", "sleep infinity"]
+  restartPolicy: Never
+
+# ❷ サービスにアクセスしてみる（まだ失敗するはず）
+kubectl exec -n mars curl-test -- curl -s --max-time 3 manager-api-svc.mars:4444 || echo "接続失敗"
 
 ====================================
 
@@ -679,6 +901,55 @@ Change this Service to a NodePort one to make it available on all nodes on port 
 Test the NodePort Service using the internal IP of all available nodes and the port 30100 using curl; you can reach the internal node IPs directly from your main terminal.  
 On which nodes is the Service reachable? On which node is the Pod running?
 
+jupiter-namespace.yaml
+ apiVersion: v1
+kind: Namespace
+metadata:
+  name: jupiter
+
+
+
+jupiter-crew-deploy.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jupiter-crew-deploy
+  namespace: jupiter
+  labels:
+    app: jupiter-crew
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jupiter-crew
+  template:
+    metadata:
+      labels:
+        app: jupiter-crew
+    spec:
+      containers:
+        - name: apache
+          image: httpd:2.4-alpine
+          ports:
+            - containerPort: 80
+
+
+jupiter-crew-svc.yaml
+ apiVersion: v1
+kind: Service
+metadata:
+  name: jupiter-crew-svc
+  namespace: jupiter
+spec:
+  type: ClusterIP          # ← ここを NodePort に直し、nodePort: 30100 を追加する
+  selector:
+    app: jupiter-crew
+  ports:
+    - name: http
+      port: 80            # サービスが公開するポート
+      targetPort: 80      # Pod 側のポート
+      protocol: TCP
+
 ====================================
 
 
@@ -696,6 +967,64 @@ Create a NetworkPolicy named np1 which restricts outgoing TCP connections from D
 Make sure the NetworkPolicy still allows outgoing traffic on UDP/TCP port 53 for DNS resolution.
 
 Test using: wget www.google.com and wget api:2222 from a Pod of Deployment frontend.
+
+venus-namespace.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: venus
+
+
+api-deploy.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api
+  namespace: venus
+  labels:
+    app: api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api
+  template:
+    metadata:
+      labels:
+        app: api
+    spec:
+      containers:
+        - name: api
+          image: busybox:1.31.0            # wget が入っていて軽量
+          command:
+            - sh
+            - -c
+            - |
+              # “HTTP/1.1 200 OK” を返す簡易サーバ
+              echo '<h1>api OK</h1>' > /www/index.html
+              httpd -f -p 2222 -h /www     # フォアグラウンドでポート 2222
+          ports:
+            - containerPort: 2222
+              protocol: TCP
+
+
+
+api-svc.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: api
+  namespace: venus
+spec:
+  type: ClusterIP
+  selector:
+    app: api
+  ports:
+    - name: http
+      port: 2222        # Service で解決されるポート
+      targetPort: 2222  # Pod 側のポート
+      protocol: TCP
+
 
 ====================================
 
@@ -717,3 +1046,103 @@ Solve this question on instance: ssh ckad9043
 Team Sunny needs to identify some of their Pods in namespace sun.  
 They ask you to add a new label protected: true to all Pods with an existing label type: worker or type: runner.  
 Also add an annotation protected: "do not delete this pod" to all Pods having the new label protected: true.
+
+namespace.yaml
+# neptune / sun それぞれの Namespace を作成
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: neptune
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: sun
+---
+# Neptune チーム用 ServiceAccount
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: neptune-sa-v2
+  namespace: neptune
+
+Deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: neptune-10ab
+  namespace: neptune
+  labels:
+    app: neptune-10ab
+spec:
+  replicas: 1            # ← ★ ここを 3 に直す
+  selector:
+    matchLabels:
+      app: neptune-10ab
+  template:
+    metadata:
+      labels:
+        app: neptune-10ab
+    spec:
+      serviceAccountName: neptune-sa-v2
+      containers:
+        - name: neptune-pod-10ab     # ← ★ 課題どおり
+          image: httpd:2.4-alpine    # ← ★ 課題どおり
+          resources:
+            requests:
+              memory: "20Mi"         # ← ★ 課題どおり
+            limits:
+              memory: "50Mi"         # ← ★ 課題どおり
+              
+pod.yaml
+# worker 役
+apiVersion: v1
+kind: Pod
+metadata:
+  name: worker-a
+  namespace: sun
+  labels:
+    type: worker
+spec:
+  containers:
+    - name: pause
+      image: registry.k8s.io/pause:3.9
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: worker-b
+  namespace: sun
+  labels:
+    type: worker
+spec:
+  containers:
+    - name: pause
+      image: registry.k8s.io/pause:3.9
+---
+# runner 役
+apiVersion: v1
+kind: Pod
+metadata:
+  name: runner-a
+  namespace: sun
+  labels:
+    type: runner
+spec:
+  containers:
+    - name: pause
+      image: registry.k8s.io/pause:3.9
+---
+# ラベルが条件に合わない Pod（動作確認用）
+apiVersion: v1
+kind: Pod
+metadata:
+  name: misc-x
+  namespace: sun
+  labels:
+    type: misc
+spec:
+  containers:
+    - name: pause
+      image: registry.k8s.io/pause:3.9
+
