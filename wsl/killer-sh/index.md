@@ -14,13 +14,6 @@ Get the list and save it to ~/dev/k8s-ckad/wsl/killer-sh/namespaces
 ====================================
 
 
-s-ckad/wsl/killer-sh$ k get ns -A > ~/dev/k8s-ckad/wsl/killer-sh/namespaces
-wsl@DESKTOP-M40H3KM:~/dev/k8s-ckad/wsl/killer-sh$ cat ~/dev/k8s-ckad/wsl/killer-sh/namespaces
-NAME              STATUS   AGE
-default           Active   3m3s
-kube-node-lease   Active   3m3s
-kube-public       Active   3m3s
-kube-system       Active   3m3s
 
 
 ====================================
@@ -37,25 +30,7 @@ Please write whilea command that does this into /home/wsl/dev/k8s-ckad/wsl/kille
 
 ====================================
 
-40H3KM:~/dev/k8s-ckad/wsl/killer-sh$ while true end; kubectl get pod pod1; end; > pod1-status-command.sh
-> ^C
-wsl@DESKTOP-M40H3KM:~/dev/k8s-ckad/wsl/killer-sh$ cat pod1.yaml 
-apiVersion: v1
-kind: Pod
-metadata:
-  creationTimestamp: null
-  labels:
-    run: pod1
-  name: pod1
-spec:
-  containers:
-  - image: httpd:2.4.41-alpine
-    name: pod1-container 
-    resources: {}
-  dnsPolicy: ClusterFirst
-  restartPolicy: Always
-status: {}
-wsl@DESKTOP-M40H3KM:~/dev/k8s-ckad/wsl/killer-sh$ 
+
 
 
 
@@ -74,9 +49,6 @@ The job should be named neb-new-job and the container neb-new-job-container.
 
 ====================================
 
-k create job neb-new-job --image=busybox:1.31.0 -n neptune     -- "sleep 2 && echo done"    --dry-run=client -o yaml > job.yaml
-completion:3
-parallel:2
 
 
 ====================================
@@ -94,9 +66,6 @@ Team Mercury asked you to perform some operations using Helm, all in Namespace m
 4. There seems to be a broken release, stuck in pending-install state. Find it and delete it
 
 ====================================
-helm uninstall internal-issue-report-apiv1  
-helm upgrade internal-issue-report-apiv2 bitnami/nginx
-helm install internal-issue-report-apache bitnami/apache
 
 ====================================
 Q5
@@ -155,7 +124,6 @@ The Pod should run the command `touch /tmp/ready && sleep 1d`, which will create
 
 ====================================
 
-k run pod pod6 --image=busybox:1.31.0 --dry-run=client -oyaml --command -- sh -c    "touch /tmp/ready && sleep 1d"     > pod6.yaml
 
 
 ====================================
@@ -395,108 +363,6 @@ Also check if the logs of Pod project-plt-6cc-api show the request and write tho
 
 ====================================
 
-ほぼ形になっていますが、**試験要件どおりに動くようにするには 3 点だけ修正** が必要です。
-
-| #     | 修正ポイント             | 現状                              | 正しくは                                                                            |
-| ----- | ------------------ | ------------------------------- | ------------------------------------------------------------------------------- |
-| **1** | **Pod イメージタグ**     | `nginx:1.17.3`                  | `nginx:1.17.3-alpine`<br>（問題文どおり “-alpine” を付ける）                                |
-| **2** | **Service のポート対応** | `port: 80` → `targetPort: 3333` | **逆** にする：<br>`port: 3333`（クライアントが叩く側）<br>`targetPort: 80`（Pod 内 Nginx が待ち受ける側） |
-| **3** | **Service 作成コマンド** | `-l plt-6cc-api` でエラー           | `--labels project=plt-6cc-api`<br>（`-l` は selector 用・labels は key=value）        |
-
----
-
-## ✔ 修正後の YAML サンプル
-
-### Pod - `project-plt-6cc-api.yaml`
-
-```yaml
-apiVersion: v1
-kind: Pod
-metadata:
-  name: project-plt-6cc-api
-  namespace: pluto
-  labels:
-    project: plt-6cc-api
-spec:
-  containers:
-    - name: project-plt-6cc-api
-      image: nginx:1.17.3-alpine          # ← 修正①
-      ports:
-        - containerPort: 80
-```
-
-### Service - `project-plt-6cc-svc.yaml`
-
-```yaml
-apiVersion: v1
-kind: Service
-metadata:
-  name: project-plt-6cc-svc
-  namespace: pluto
-spec:
-  selector:
-    project: plt-6cc-api
-  ports:
-    - port: 3333         # ← クライアント受付
-      targetPort: 80     # ← Pod 内
-      protocol: TCP
-```
-
----
-
-## 🔄 作り直しコマンド例
-
-```bash
-# Namespace が無ければ
-kubectl create ns pluto --dry-run=client -o yaml | kubectl apply -f -
-
-# Pod を適用
-kubectl apply -f project-plt-6cc-api.yaml
-
-# Service を適用
-kubectl apply -f project-plt-6cc-svc.yaml
-```
-
-> `kubectl expose` でサクッと作る場合は
->
-> ```bash
-> kubectl expose pod project-plt-6cc-api \
->   --name=project-plt-6cc-svc \
->   --port=3333 --target-port=80 \        # ← ポートを逆に指定
->   --namespace=pluto \
->   --dry-run=client -o yaml > project-plt-6cc-svc.yaml
-> ```
-
----
-
-## 🧪 動作テスト & ファイル出力
-
-```bash
-# Pod Ready を待つ
-kubectl wait --for=condition=ready pod/project-plt-6cc-api -n pluto --timeout=60s
-
-# 1️⃣ Service 経由で HTML を取得
-kubectl run tmp-curl -n pluto --rm -i --restart=Never \
-  --image=nginx:alpine --command -- \
-  sh -c "apk add --no-cache curl >/dev/null && \
-         curl -s http://project-plt-6cc-svc:3333/" \
-  > /opt/course/10/service_test.html
-
-# 2️⃣ Pod のアクセスログ保存
-kubectl logs project-plt-6cc-api -n pluto \
-  > /opt/course/10/service_test.log
-```
-
----
-
-### これで OK になる理由
-
-* **Pod ラベル** と **Service selector** が一致
-* Service **port 3333 → targetPort 80** で要件どおりの TCP リダイレクト
-* イメージタグも問題文指定 `1.17.3-alpine` に修正済み
-
-以上 3 点直せば、`curl http://project-plt-6cc-svc:3333` で HTML が取れ、ログにもリクエストが出ます！
-
 
 
 ====================================
@@ -565,28 +431,6 @@ The provisioner moon-retainer will be created by another team, so it's expected 
 Confirm this by writing the log message from the PVC into file /opt/course/13/pvc-126-reason.
 
 ====================================
-
-
-apiVersion: storage.k8s.io/v1
-kind: StorageClass
-metadata:
-  name: moon-retain
-provisioner: moon-retainer          # ★必須
-reclaimPolicy: Retain               # ★要件
-
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: moon-pvc-126
-  namespace: moon
-spec:
-  accessModes:
-    - ReadWriteOnce                 # ★要件
-  resources:
-    requests:
-      storage: 3Gi                  # ★要件
-  storageClassName: moon-retain     # ★要件
-
 
 
 
@@ -1093,7 +937,7 @@ spec:
               memory: "20Mi"         # ← ★ 課題どおり
             limits:
               memory: "50Mi"         # ← ★ 課題どおり
-              
+
 pod.yaml
 # worker 役
 apiVersion: v1

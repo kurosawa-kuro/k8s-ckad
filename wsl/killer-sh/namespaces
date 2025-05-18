@@ -1,5 +1,0 @@
-NAME              STATUS   AGE
-default           Active   3m3s
-kube-node-lease   Active   3m3s
-kube-public       Active   3m3s
-kube-system       Active   3m3s
