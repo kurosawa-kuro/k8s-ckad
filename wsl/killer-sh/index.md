@@ -48,14 +48,13 @@ It should be in namespace neptune, run a total of 3 times and should execute 2 r
 Start the Job and check its history. Each pod created by the Job should have the label id: awesome-job.  
 The job should be named neb-new-job and the container neb-new-job-container.
 
+kubectl apply -f q20-01.yaml,q20-02.yaml,q20-03.yaml
+
 # q3-01.yaml
 apiVersion: v1
 kind: Namespace
 metadata:
   name: neptune
-
-kubectl apply -f q20-01.yaml,q20-02.yaml,q20-03.yaml
-
 ====================================
 
 
@@ -74,14 +73,13 @@ Team Mercury asked you to perform some operations using Helm, all in Namespace m
    The Deployment should have two replicas—set these via Helm-values during install  
 4. There seems to be a broken release, stuck in pending-install state. Find it and delete it
 
+kubectl apply -f q20-01.yaml,q20-02.yaml,q20-03.yaml
+
 # q4.yaml
 apiVersion: v1
 kind: Namespace
 metadata:
   name: mercury
-
-kubectl apply -f q20-01.yaml,q20-02.yaml,q20-03.yaml
-
 ====================================
 
 ====================================
@@ -252,7 +250,6 @@ spec:
       image: nginx:1.16.1-alpine
       ports: [{ containerPort: 80 }]
   restartPolicy: Always
-
 ====================================
 
 
@@ -314,8 +311,6 @@ spec:
         - name: backend
           image: nginx:9.99-does-not-exist   # ❌ ImagePullBackOff
           ports: [{ containerPort: 80 }]
-
-
 ====================================
 
 
@@ -356,7 +351,6 @@ spec:
       image: nginx:1.23-alpine   # 例:軽量で動作確認しやすい
       ports:
         - containerPort: 80
-
 ====================================
 
 
@@ -426,7 +420,6 @@ The PVC should be bound to the PV correctly.
 
 Finally, create a new Deployment project-earthflower in Namespace earth which mounts that volume at /tmp/project-data.  
 The Pods of that Deployment should be of image httpd:2.4.41-alpine.
-
 ====================================
 
 
@@ -456,7 +449,6 @@ apiVersion: v1
 kind: Namespace
 metadata:
   name: moon
-
 ====================================
 
 
@@ -710,7 +702,7 @@ kind: Namespace
 metadata:
   name: mars
 
-# q18-01.yaml
+# q18-02.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
