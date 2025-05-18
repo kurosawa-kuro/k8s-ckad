@@ -1,0 +1,23 @@
+# q5-01.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: neptune
+---
+# 2) ServiceAccount ------------------------------------------
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: neptune-sa-v2
+  namespace: neptune
+---
+# 3) ServiceAccount Token Secret -----------------------------
+#    controller が 'token', 'ca.crt' を自動注入する
+apiVersion: v1
+kind: Secret
+metadata:
+  name: neptune-sa-v2-token        # 好きな名前でOK
+  namespace: neptune
+  annotations:
+    kubernetes.io/service-account.name: neptune-sa-v2
+type: kubernetes.io/service-account-token

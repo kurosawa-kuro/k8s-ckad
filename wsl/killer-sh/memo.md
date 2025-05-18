@@ -17,6 +17,40 @@
 
 -# CKAD 苦手克服リファレンス
 
+### “覚えやすさ優先”で並べ替えた kcfg
+
+```bash
+alias kcfg='kubectl get cm,secret,sa,role,pvc,svc,events -n'
+```
+
+#### 並べ替えルール
+
+| ブロック          | リソース           | 覚え方                           | よく見る流れ              |
+| ------------- | -------------- | ----------------------------- | ------------------- |
+| **① 設定**      | `cm`, `secret` | **C**onfig & **S**ecret       | まず環境変数や証明書を確認       |
+| **② 認証/RBAC** | `sa`, `role`   | **S**erviceAccount → **R**ole | 次に誰がアクセスするか確認       |
+| **③ ストレージ**   | `pvc`          | **P**ersistent Volume Claim   | Pod Pending の定番チェック |
+| **④ 接続口**     | `svc`          | **S**ervice                   | 外部/内部通信が通るか確認       |
+| **⑤ 状態ログ**    | `events`       | **E**vents                    | 最後にエラーの事実を掴む        |
+
+頭文字の並び **C-S-S-R-P-S-E** を
+
+> \*\*「**C**hildren **S**ing **S**ongs, **R**abbits **P**lay **S**oft **E**choes」
+
+と語呂合わせしておくと一発で思い出せます。
+
+---
+
+#### 使い方例
+
+```bash
+kcfg neptune   # ← Namespace だけ後ろに付ける
+```
+
+出力を上から順に眺めれば、
+「設定 → 認可 → ストレージ → 通信 → イベント」の典型トラブル診断フローが自然にたどれます。
+
+
 ---
 
 ## 1. `kubectl run --command` の流れ

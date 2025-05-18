@@ -5,6 +5,7 @@ cd /home/wsl/dev/k8s-ckad/wsl/killer-sh
 alias k=kubectl
 export do="--dry-run=client -o yaml"
 alias kn='kubectl config set-context --current --namespace '
+alias kcfg='kubectl get cm,secret,sa,role,pvc,svc,events -n'
 
 ====================================
 Q1
@@ -47,6 +48,14 @@ It should be in namespace neptune, run a total of 3 times and should execute 2 r
 Start the Job and check its history. Each pod created by the Job should have the label id: awesome-job.  
 The job should be named neb-new-job and the container neb-new-job-container.
 
+# q3-01.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: neptune
+
+kubectl apply -f q20-01.yaml,q20-02.yaml,q20-03.yaml
+
 ====================================
 
 
@@ -65,6 +74,14 @@ Team Mercury asked you to perform some operations using Helm, all in Namespace m
    The Deployment should have two replicas—set these via Helm-values during install  
 4. There seems to be a broken release, stuck in pending-install state. Find it and delete it
 
+# q4.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: mercury
+
+kubectl apply -f q20-01.yaml,q20-02.yaml,q20-03.yaml
+
 ====================================
 
 ====================================
@@ -77,34 +94,32 @@ Team Neptune has its own ServiceAccount named neptune-sa-v2 in Namespace neptune
 A coworker needs the token from the Secret that belongs to that ServiceAccount.  
 Write the base64 decoded token to file /opt/course/5/token on ckad7326.
 
-01-neptune-sa.yaml
+kubectl apply -f q20-01.yaml,q20-02.yaml,q20-03.yaml
 
+# q5.yaml
 apiVersion: v1
 kind: Namespace
 metadata:
   name: neptune
 ---
+# 2) ServiceAccount ------------------------------------------
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: neptune-sa-v2
   namespace: neptune
-  # 必須ではないが明示しておくと分かりやすい
-secrets:
-  - name: neptune-secret-1    # ↓②で作成する Secret 名を参照
-
-
-
-02-neptune-secret.yaml
-
+---
+# 3) ServiceAccount Token Secret -----------------------------
+#    controller が 'token', 'ca.crt' を自動注入する
 apiVersion: v1
 kind: Secret
 metadata:
-  name: neptune-secret-1
+  name: neptune-sa-v2-token        # 好きな名前でOK
   namespace: neptune
   annotations:
     kubernetes.io/service-account.name: neptune-sa-v2
 type: kubernetes.io/service-account-token
+
 
 
 ====================================
@@ -136,8 +151,9 @@ The board of Team Neptune decided to take over control of one e-commerce webserv
 
 Search for the correct Pod in Namespace saturn and move it to Namespace neptune. It doesn’t matter if you shut it down and spin it up again; it probably hasn’t any customers anyways.
 
-07-namespaces.yaml
+kubectl apply -f q20-01.yaml,q20-02.yaml,q20-03.yaml
 
+# q7-01.yaml
 apiVersion: v1
 kind: Namespace
 metadata:
@@ -149,8 +165,7 @@ metadata:
   name: neptune
 
 
-07-webservers-saturn.yaml 
-
+# q7-02.yaml
 apiVersion: v1
 kind: Pod
 metadata:
@@ -251,14 +266,16 @@ Solve this question on instance: ssh ckad7326
 
 There is an existing Deployment named api-new-c32 in Namespace neptune. A developer made an update to the Deployment but the updated version never came online. Check the Deployment’s revision history, find a revision that works, then rollback to it. Could you tell Team Neptune what the error was so it doesn’t happen again?
 
-08-namespace.yaml
+kubectl apply -f q20-01.yaml,q20-02.yaml,q20-03.yaml
+
+# q8-01.yaml
 apiVersion: v1
 kind: Namespace
 metadata:
   name: neptune
 
 
-08-deploy-v1.yaml
+# q8-02.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -277,7 +294,7 @@ spec:
           image: nginx:1.23-alpine        # ✅ pull 可能
           ports: [{ containerPort: 80 }]
 
-08-deploy-v2-bad.yaml
+# q8-03.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -317,13 +334,15 @@ Convert the Pod into a Deployment named holy-api with 3 replicas and delete the 
 In addition, the new Deployment should set `allowPrivilegeEscalation: false` and `privileged: false` in the container’s securityContext.  
 Please create the Deployment and save its YAML under /opt/course/9/holy-api-deployment.yaml.
 
-09-pluto-namespace.yaml
+kubectl apply -f q20-01.yaml,q20-02.yaml,q20-03.yaml
+
+# q9-01.yaml
 apiVersion: v1
 kind: Namespace
 metadata:
   name: pluto
 
-09-holy-api-pod.yaml 
+# q9-02.yaml
 apiVersion: v1
 kind: Pod
 metadata:
@@ -337,8 +356,6 @@ spec:
       image: nginx:1.23-alpine   # 例:軽量で動作確認しやすい
       ports:
         - containerPort: 80
-
-
 
 ====================================
 
@@ -430,6 +447,16 @@ The claim should request storage of 3Gi, an accessMode of ReadWriteOnce and shou
 The provisioner moon-retainer will be created by another team, so it's expected that the PVC will not bind yet.  
 Confirm this by writing the log message from the PVC into file /opt/course/13/pvc-126-reason.
 
+
+kubectl apply -f q20-01.yaml,q20-02.yaml,q20-03.yaml
+
+
+# q13.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: moon
+
 ====================================
 
 
@@ -449,7 +476,9 @@ There is existing YAML for another Secret at /opt/course/14/secret2.yaml; create
 Your changes should be saved under /opt/course/14/secret-handler-new.yaml on ckad9043.  
 Both Secrets should only be available in Namespace moon.
 
-secret1.yaml
+kubectl apply -f q20-01.yaml,q20-02.yaml,q20-03.yaml
+
+# q14-01.yaml
 apiVersion: v1
 kind: Secret
 metadata:
@@ -460,7 +489,7 @@ stringData:
   user: test
   pass: pwd
 
-secret-handler-new.yaml
+# q14-02.yaml
 apiVersion: v1
 kind: Pod
 metadata:
@@ -516,6 +545,9 @@ To complete, please create a ConfigMap called configmap-web-moon-html containing
 The Deployment web-moon is already configured to work with this ConfigMap and serve its content.  
 Test the nginx configuration, for example using curl from a temporary nginx:alpine Pod.
 
+kubectl apply -f q20-01.yaml,q20-02.yaml,q20-03.yaml
+
+# q15.yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -547,7 +579,9 @@ Create a sidecar container named logger-con, image busybox:1.31.0, which mounts 
 This way it can be picked up by kubectl logs.  
 Check if the logs of the new container reveal something about the missing data incidents.
 
-cleaner-new.yaml 
+kubectl apply -f q20-01.yaml,q20-02.yaml,q20-03.yaml
+
+# q16.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -610,7 +644,9 @@ For this test we ignore that it doesn't contain valid HTML.
 The InitContainer should be using image busybox:1.31.0.  
 Test your implementation, for example using curl from a temporary nginx:alpine Pod.
 
-test-init-container.yaml
+kubectl apply -f q20-01.yaml,q20-02.yaml,q20-03.yaml
+
+# q17.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -666,13 +702,15 @@ There seems to be an issue in Namespace mars where the ClusterIP service manager
 You can test this with curl manager-api-svc.mars:4444 from a temporary nginx:alpine Pod.  
 Check for the misconfiguration and apply a fix.
 
-mars-namespace.yaml
+kubectl apply -f q20-01.yaml,q20-02.yaml,q20-03.yaml
+
+# q18-01.yaml
 apiVersion: v1
 kind: Namespace
 metadata:
   name: mars
 
-manager-api-deployment.yaml
+# q18-01.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -696,7 +734,7 @@ spec:
           ports:
             - containerPort: 80
 
-manager-api-svc.yaml
+# q18-03.yaml
 apiVersion: v1
 kind: Service
 metadata:
@@ -712,7 +750,7 @@ spec:
       targetPort: 8888    # ← ★ Pod 側のポートと“ズレている”ため通信できない
       protocol: TCP
 
-curl-test.yaml
+# q18-04.yaml
 apiVersion: v1
 kind: Pod
 metadata:
@@ -745,15 +783,15 @@ Change this Service to a NodePort one to make it available on all nodes on port 
 Test the NodePort Service using the internal IP of all available nodes and the port 30100 using curl; you can reach the internal node IPs directly from your main terminal.  
 On which nodes is the Service reachable? On which node is the Pod running?
 
-jupiter-namespace.yaml
+kubectl apply -f q20-01.yaml,q20-02.yaml,q20-03.yaml
+
+# q19-01.yaml
  apiVersion: v1
 kind: Namespace
 metadata:
   name: jupiter
 
-
-
-jupiter-crew-deploy.yaml
+# q19-02.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -777,8 +815,7 @@ spec:
           ports:
             - containerPort: 80
 
-
-jupiter-crew-svc.yaml
+# q19-03.yaml
  apiVersion: v1
 kind: Service
 metadata:
@@ -812,14 +849,15 @@ Make sure the NetworkPolicy still allows outgoing traffic on UDP/TCP port 53 for
 
 Test using: wget www.google.com and wget api:2222 from a Pod of Deployment frontend.
 
-venus-namespace.yaml
+kubectl apply -f q20-01.yaml,q20-02.yaml,q20-03.yaml
+
+# q20-01.yaml
 apiVersion: v1
 kind: Namespace
 metadata:
   name: venus
 
-
-api-deploy.yaml
+# q20-02.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -851,9 +889,7 @@ spec:
             - containerPort: 2222
               protocol: TCP
 
-
-
-api-svc.yaml
+# q20-03.yaml
 apiVersion: v1
 kind: Service
 metadata:
@@ -872,7 +908,7 @@ spec:
 
 ====================================
 
-
+====================================
 Question 21:
 Solve this question on instance: ssh ckad7326
 
@@ -883,7 +919,24 @@ Each container should have a memory request of 20Mi and a memory limit of 50Mi.
 Team Neptune has its own ServiceAccount neptune-sa-v2 under which the Pods should run.  
 The Deployment should be in Namespace neptune.
 
+kubectl apply -f q20-01.yaml,q20-02.yaml,q20-03.yaml
 
+# q21.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: neptune
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: neptune-sa-v2
+  namespace: neptune
+
+====================================
+
+
+====================================
 Question 22:
 Solve this question on instance: ssh ckad9043
 
@@ -891,7 +944,9 @@ Team Sunny needs to identify some of their Pods in namespace sun.
 They ask you to add a new label protected: true to all Pods with an existing label type: worker or type: runner.  
 Also add an annotation protected: "do not delete this pod" to all Pods having the new label protected: true.
 
-namespace.yaml
+kubectl apply -f q20-01.yaml,q20-02.yaml,q20-03.yaml
+
+# q22-01.yaml
 # neptune / sun それぞれの Namespace を作成
 apiVersion: v1
 kind: Namespace
@@ -910,7 +965,7 @@ metadata:
   name: neptune-sa-v2
   namespace: neptune
 
-Deployment.yaml
+# q22-02.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -938,7 +993,7 @@ spec:
             limits:
               memory: "50Mi"         # ← ★ 課題どおり
 
-pod.yaml
+# q22-03.yaml
 # worker 役
 apiVersion: v1
 kind: Pod

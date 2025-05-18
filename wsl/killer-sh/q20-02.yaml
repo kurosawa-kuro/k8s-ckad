@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api
+  namespace: venus
+  labels:
+    app: api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api
+  template:
+    metadata:
+      labels:
+        app: api
+    spec:
+      containers:
+        - name: api
+          image: busybox:1.31.0            # wget が入っていて軽量
+          command:
+            - sh
+            - -c
+            - |
+              # “HTTP/1.1 200 OK” を返す簡易サーバ
+              echo '<h1>api OK</h1>' > /www/index.html
+              httpd -f -p 2222 -h /www     # フォアグラウンドでポート 2222
+          ports:
+            - containerPort: 2222
+              protocol: TCP
