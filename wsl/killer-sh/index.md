@@ -395,6 +395,107 @@ Also check if the logs of Pod project-plt-6cc-api show the request and write tho
 
 ====================================
 
+ほぼ形になっていますが、**試験要件どおりに動くようにするには 3 点だけ修正** が必要です。
+
+| #     | 修正ポイント             | 現状                              | 正しくは                                                                            |
+| ----- | ------------------ | ------------------------------- | ------------------------------------------------------------------------------- |
+| **1** | **Pod イメージタグ**     | `nginx:1.17.3`                  | `nginx:1.17.3-alpine`<br>（問題文どおり “-alpine” を付ける）                                |
+| **2** | **Service のポート対応** | `port: 80` → `targetPort: 3333` | **逆** にする：<br>`port: 3333`（クライアントが叩く側）<br>`targetPort: 80`（Pod 内 Nginx が待ち受ける側） |
+| **3** | **Service 作成コマンド** | `-l plt-6cc-api` でエラー           | `--labels project=plt-6cc-api`<br>（`-l` は selector 用・labels は key=value）        |
+
+---
+
+## ✔ 修正後の YAML サンプル
+
+### Pod - `project-plt-6cc-api.yaml`
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: project-plt-6cc-api
+  namespace: pluto
+  labels:
+    project: plt-6cc-api
+spec:
+  containers:
+    - name: project-plt-6cc-api
+      image: nginx:1.17.3-alpine          # ← 修正①
+      ports:
+        - containerPort: 80
+```
+
+### Service - `project-plt-6cc-svc.yaml`
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: project-plt-6cc-svc
+  namespace: pluto
+spec:
+  selector:
+    project: plt-6cc-api
+  ports:
+    - port: 3333         # ← クライアント受付
+      targetPort: 80     # ← Pod 内
+      protocol: TCP
+```
+
+---
+
+## 🔄 作り直しコマンド例
+
+```bash
+# Namespace が無ければ
+kubectl create ns pluto --dry-run=client -o yaml | kubectl apply -f -
+
+# Pod を適用
+kubectl apply -f project-plt-6cc-api.yaml
+
+# Service を適用
+kubectl apply -f project-plt-6cc-svc.yaml
+```
+
+> `kubectl expose` でサクッと作る場合は
+>
+> ```bash
+> kubectl expose pod project-plt-6cc-api \
+>   --name=project-plt-6cc-svc \
+>   --port=3333 --target-port=80 \        # ← ポートを逆に指定
+>   --namespace=pluto \
+>   --dry-run=client -o yaml > project-plt-6cc-svc.yaml
+> ```
+
+---
+
+## 🧪 動作テスト & ファイル出力
+
+```bash
+# Pod Ready を待つ
+kubectl wait --for=condition=ready pod/project-plt-6cc-api -n pluto --timeout=60s
+
+# 1️⃣ Service 経由で HTML を取得
+kubectl run tmp-curl -n pluto --rm -i --restart=Never \
+  --image=nginx:alpine --command -- \
+  sh -c "apk add --no-cache curl >/dev/null && \
+         curl -s http://project-plt-6cc-svc:3333/" \
+  > /opt/course/10/service_test.html
+
+# 2️⃣ Pod のアクセスログ保存
+kubectl logs project-plt-6cc-api -n pluto \
+  > /opt/course/10/service_test.log
+```
+
+---
+
+### これで OK になる理由
+
+* **Pod ラベル** と **Service selector** が一致
+* Service **port 3333 → targetPort 80** で要件どおりの TCP リダイレクト
+* イメージタグも問題文指定 `1.17.3-alpine` に修正済み
+
+以上 3 点直せば、`curl http://project-plt-6cc-svc:3333` で HTML が取れ、ログにもリクエストが出ます！
 
 
 
@@ -422,7 +523,7 @@ NOTE: Make sure to run all commands as user candidate; for docker use sudo docke
 
 
 ====================================
-
+dockerは後回し
 
 
 
