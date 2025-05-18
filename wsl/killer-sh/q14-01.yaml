@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: secret1
+  namespace: moon
+type: Opaque            # ← 文字列そのまま扱えるよう stringData を使用
+stringData:
+  user: test
+  pass: pwd

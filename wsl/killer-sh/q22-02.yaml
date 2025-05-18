@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: neptune-10ab
+  namespace: neptune
+  labels:
+    app: neptune-10ab
+spec:
+  replicas: 1            # ← ★ ここを 3 に直す
+  selector:
+    matchLabels:
+      app: neptune-10ab
+  template:
+    metadata:
+      labels:
+        app: neptune-10ab
+    spec:
+      serviceAccountName: neptune-sa-v2
+      containers:
+        - name: neptune-pod-10ab     # ← ★ 課題どおり
+          image: httpd:2.4-alpine    # ← ★ 課題どおり
+          resources:
+            requests:
+              memory: "20Mi"         # ← ★ 課題どおり
+            limits:
+              memory: "50Mi"         # ← ★ 課題どおり

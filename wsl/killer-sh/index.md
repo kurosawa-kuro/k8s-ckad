@@ -371,7 +371,6 @@ The Service should use tcp port redirection of 3333:80.
 Finally, use—for example—curl from a temporary nginx:alpine Pod to get the response from the Service.  
 Write the response into /opt/course/10/service_test.html on ckad9043.  
 Also check if the logs of Pod project-plt-6cc-api show the request and write those into /opt/course/10/service_test.log on ckad9043.
-
 ====================================
 
 
@@ -516,7 +515,6 @@ spec:
         secretName: secret2
         defaultMode: 0440
     # ... 既存 volumes があればここに残す ...
-
 ====================================
 
 
@@ -610,10 +608,6 @@ spec:
       volumes:
       - name: logs-vol
         emptyDir: {}                 # ログ保存用に両コンテナが共有
-
-
-
-
 ====================================
 
 
@@ -676,8 +670,6 @@ spec:
           volumeMounts:
             - name: content-vol
               mountPath: /usr/share/nginx/html
-
-
 ====================================
 
 
@@ -778,7 +770,7 @@ On which nodes is the Service reachable? On which node is the Pod running?
 kubectl apply -f q20-01.yaml,q20-02.yaml,q20-03.yaml
 
 # q19-01.yaml
- apiVersion: v1
+apiVersion: v1
 kind: Namespace
 metadata:
   name: jupiter
@@ -808,7 +800,7 @@ spec:
             - containerPort: 80
 
 # q19-03.yaml
- apiVersion: v1
+apiVersion: v1
 kind: Service
 metadata:
   name: jupiter-crew-svc
@@ -822,7 +814,6 @@ spec:
       port: 80            # サービスが公開するポート
       targetPort: 80      # Pod 側のポート
       protocol: TCP
-
 ====================================
 
 

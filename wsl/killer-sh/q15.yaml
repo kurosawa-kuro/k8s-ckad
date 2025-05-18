@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: configmap-web-moon-html
+  namespace: moon
+data:
+  index.html: |
+    <!-- ここに /opt/course/15/web-moon.html の内容を貼り付ける -->

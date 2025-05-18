@@ -1,0 +1,50 @@
+# worker 役
+apiVersion: v1
+kind: Pod
+metadata:
+  name: worker-a
+  namespace: sun
+  labels:
+    type: worker
+spec:
+  containers:
+    - name: pause
+      image: registry.k8s.io/pause:3.9
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: worker-b
+  namespace: sun
+  labels:
+    type: worker
+spec:
+  containers:
+    - name: pause
+      image: registry.k8s.io/pause:3.9
+---
+# runner 役
+apiVersion: v1
+kind: Pod
+metadata:
+  name: runner-a
+  namespace: sun
+  labels:
+    type: runner
+spec:
+  containers:
+    - name: pause
+      image: registry.k8s.io/pause:3.9
+---
+# ラベルが条件に合わない Pod（動作確認用）
+apiVersion: v1
+kind: Pod
+metadata:
+  name: misc-x
+  namespace: sun
+  labels:
+    type: misc
+spec:
+  containers:
+    - name: pause
+      image: registry.k8s.io/pause:3.9
