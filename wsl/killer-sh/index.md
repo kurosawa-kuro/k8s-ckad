@@ -6,6 +6,7 @@ alias k=kubectl
 export do="--dry-run=client -o yaml"
 alias kn='kubectl config set-context --current --namespace '
 alias kcfg='kubectl get cm,secret,sa,role,pvc,svc,events -n'
+
 # c s s r p s e
 ====================================
 Q1
