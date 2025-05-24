@@ -36,9 +36,8 @@ kubectl run curl -n pluto --rm -it --restart=Never --image=curlimages/curl -- sh
 ====================================
 Q1
 
-The DevOps team would like to get the list of all Namespaces in the cluster.  
-Get the list and save it to ~/dev/k8s-ckad/wsl/killer-sh/namespaces
-
+DevOps チームは、クラスタ内に存在する **すべての Namespace の一覧を取得** したいと考えています。
+その一覧を取得し、`~/dev/k8s-ckad/wsl/killer-sh/namespaces` というファイルに保存してください。
 ====================================
 
 
@@ -50,11 +49,17 @@ Q2
 Question 2:
 Solve this question on instance: ssh ckad5601
 
-Create a single Pod of image httpd:2.4.41-alpine in Namespace default.  
-The Pod should be named pod1 and the container should be named pod1-container.
+* **default** Namespace に、イメージ **`httpd:2.4.41-alpine`** の **Pod を 1 つ作成**してください。
 
-Your manager would like to run a command manually on occasion to output the status of that exact Pod.  
-Please write whilea command that does this into /home/wsl/dev/k8s-ckad/wsl/killer-sh/pod1-status-command.sh on ckad5601. The command should use kubectl.
+  * Pod 名: **`pod1`**
+  * コンテナ名: **`pod1-container`**
+
+* 上司はときどきその Pod のステータスを手動で確認したいと考えています。
+  **`kubectl` を使って Pod のステータスを出力するコマンド**を作成し、
+  **ckad5601** ノードの
+  `~/dev/k8s-ckad/wsl/killer-sh/pod1-status-command.sh`
+  に記述してください。
+
 
 ====================================
 
@@ -85,12 +90,18 @@ Q3
 Question 3:
 Solve this question on instance: ssh ckad7326
 
-Team Neptune needs a Job template located at job.yaml.  
-This Job should run image busybox:1.31.0 and execute sleep 2 && echo done.  
-It should be in namespace neptune, run a total of 3 times and should execute 2 runs in parallel.
+**Neptune チーム**向けに **`job.yaml`** というファイルで Job のテンプレートを作成してください。
 
-Start the Job and check its history. Each pod created by the Job should have the label id: awesome-job.  
-The job should be named neb-new-job and the container neb-new-job-container.
+* 使用イメージ: **`busybox:1.31.0`**
+* 実行コマンド: `sleep 2 && echo done`
+* Namespace: **`neptune`**
+* **実行回数は合計 3 回**、そのうち **2 回を並列**で実行する
+* Job 名: **`neb-new-job`**
+* コンテナ名: **`neb-new-job-container`**
+* Job が生成する各 Pod には **`id: awesome-job`** というラベルを付ける
+
+Job を起動し、履歴を確認できるようにしてください。
+
 
 kubectl apply -f q3-01.yaml
 
@@ -109,13 +120,15 @@ Q4
 Question 4:
 Solve this question on instance: ssh ckad7326
 
-Team Mercury asked you to perform some operations using Helm, all in Namespace mercury:
+Mercury チームから **Namespace `mercury`** 内で Helm を使って次の作業を依頼されています。
 
-1. Delete release internal-issue-report-apiv1  
-2. Upgrade release internal-issue-report-apiv2 to any newer version of chart bitnami/nginx available  
-3. Install a new release internal-issue-report-apache of chart bitnami/apache.  
-   The Deployment should have two replicas—set these via Helm-values during install  
-4. There seems to be a broken release, stuck in pending-install state. Find it and delete it
+1. **`internal-issue-report-apiv1`** というリリースを削除する
+2. **`internal-issue-report-apiv2`** リリースを、利用可能な **`bitnami/nginx`** チャートの新しいバージョンへアップグレードする
+3. **`bitnami/apache`** チャートを用いて、新しいリリース **`internal-issue-report-apache`** をインストールする
+
+   * その際、Helm の values で **Deployment のレプリカ数を 2** に設定する
+4. **`pending-install` 状態で止まっている壊れたリリース** があるので、特定して削除する
+
 
 kubectl apply -f q4.yaml
 
@@ -136,9 +149,12 @@ Q5
 Question 5:
 Solve this question on instance: ssh ckad7326
 
-Team Neptune has its own ServiceAccount named neptune-sa-v2 in Namespace neptune.  
-A coworker needs the token from the Secret that belongs to that ServiceAccount.  
-Write the base64 decoded token to file ~/dev/k8s-ckad/wsl/killer-sh/token on ckad7326.
+Neptune チームは、**Namespace `neptune`** に **`neptune-sa-v2`** という ServiceAccount を持っています。
+この ServiceAccount に紐づく Secret の **トークン** を同僚が必要としています。
+**base64 デコードしたトークン文字列**を、**ckad7326** の
+`~/dev/k8s-ckad/wsl/killer-sh/token`
+というファイルに書き込んでください。
+
 
 kubectl apply -f q5.yaml
 
@@ -178,10 +194,22 @@ Q6
 Question 6:
 Solve this question on instance: ssh ckad5601
 
-Create a single Pod named pod6 in Namespace default of image busybox:1.31.0.  
-The Pod should have a readiness-probe executing `cat /tmp/ready`. It should initially wait 5 seconds and then probe every 10 seconds. This will set the container ready only if the file `/tmp/ready` exists.
+* **default** ネームスペースに、イメージ **`busybox:1.31.0`** の **Pod を 1 つ** 作成してください。
 
-The Pod should run the command `touch /tmp/ready && sleep 1d`, which will create the necessary file to become ready and then idle. Create the Pod and confirm it starts.
+  * Pod 名：**`pod6`**
+
+* Pod には **readinessProbe** を設定し、コマンド **`cat /tmp/ready`** でヘルスチェックを行います。
+
+  * 最初の実行まで **5 秒待機**
+  * 以降は **10 秒間隔** でプローブ
+  * ファイル **`/tmp/ready`** が存在する場合のみコンテナを Ready と判定します。
+
+* コンテナの起動コマンドは
+  **`touch /tmp/ready && sleep 1d`**
+  とし、Ready 判定用のファイルを作成してから 1 日スリープします。
+
+Pod を作成し、正常に起動したことを確認してください。
+
 
 ====================================
 
@@ -193,9 +221,15 @@ Q7
 Question 7:
 Solve this question on instance: ssh ckad7326
 
-The board of Team Neptune decided to take over control of one e-commerce webserver from Team Saturn. The administrator who once set up this webserver is no longer part of the organization. All information you could get was that the e-commerce system is called my-happy-shop.
+Neptune チームの経営陣は、Saturn チームが運用していた **e コマース Web サーバ** を引き継ぐことにしました。
+そのサーバを構築した管理者は既に退職しており、判明している情報は **システム名が *my-happy-shop* である** ことだけです。
 
-Search for the correct Pod in Namespace saturn and move it to Namespace neptune. It doesn’t matter if you shut it down and spin it up again; it probably hasn’t any customers anyways.
+1. **Namespace `saturn`** の中から、該当する Pod を探し出してください。
+2. その Pod を **Namespace `neptune`** へ移動してください。
+
+   * 一度停止して新しく起動し直しても構いません。
+     （顧客はほぼいないはずなので影響はありません）
+
 
 kubectl apply -f q7-01.yaml,q7-02.yaml
 
@@ -309,7 +343,12 @@ Q8
 Question 8:
 Solve this question on instance: ssh ckad7326
 
-There is an existing Deployment named api-new-c32 in Namespace neptune. A developer made an update to the Deployment but the updated version never came online. Check the Deployment’s revision history, find a revision that works, then rollback to it. Could you tell Team Neptune what the error was so it doesn’t happen again?
+Namespace **`neptune`** には **`api-new-c32`** という Deployment が既に存在します。
+開発者がこの Deployment を更新しましたが、新しいバージョンは正常に起動しませんでした。
+
+1. Deployment の **リビジョン履歴**を確認し、動作していたリビジョンを特定してロールバックしてください。
+2. なぜ更新版が立ち上がらなかったのか、**エラーの原因**を調べて Team Neptune に報告してください。
+
 
 kubectl apply -f q8-01.yaml,q8-02.yaml,q8-03.yaml
 
@@ -370,12 +409,19 @@ Q9
 Question 9:
 Solve this question on instance: ssh ckad9043
 
-In Namespace pluto there is a single Pod named holy-api. It has been working okay for a while now but Team Pluto needs it to be more reliable.
+Namespace **`pluto`** には、現在 **`holy-api`** という Pod が 1 つだけ稼働しています。これまでは問題なく動いていましたが、Pluto チームは **信頼性向上** のために複製数を増やしたいと考えています。
 
-Convert the Pod into a Deployment named holy-api with 3 replicas and delete the original Pod once done. The raw Pod template file is available at holy-api-pod.yaml.
+1. この Pod を **Deployment** に変換し、名前は **`holy-api`**、**レプリカ数は 3** としてください。
+2. Deployment 作成後、**元の Pod は削除**してください。
 
-In addition, the new Deployment should set `allowPrivilegeEscalation: false` and `privileged: false` in the container’s securityContext.  
-Please create the Deployment and save its YAML under holy-api-pod.yaml.
+   * 参考用の生テンプレート（Pod 定義）は **`holy-api-pod.yaml`** にあります。
+3. 新しい Deployment のコンテナには **`securityContext`** を設定し、
+
+   * `allowPrivilegeEscalation: false`
+   * `privileged: false`
+     を明示してください。
+4. 作成した Deployment の YAML を **`holy-api-pod.yaml`** に保存してください。
+
 
 kubectl apply -f q9-01.yaml,q9-02.yaml
 
@@ -410,15 +456,20 @@ Q10
 Question 10:
 Solve this question on instance: ssh ckad9043
 
-Team Pluto needs a new cluster internal Service.  
-Create a ClusterIP Service named project-plt-6cc-svc in Namespace pluto.  
-This Service should expose a single Pod named project-plt-6cc-api of image nginx:1.17.3-alpine—create that Pod as well.  
-The Pod should be identified by label project: plt-6cc-api.  
-The Service should use tcp port redirection of 3333:80.
+Pluto チームはクラスタ内部用の新しい Service を必要としています。
 
-Finally, use—for example—curl from a temporary nginx:alpine Pod to get the response from the Service.  
-Write the response into /opt/course/10/service_test.html on ckad9043.  
-Also check if the logs of Pod project-plt-6cc-api show the request and write those into /opt/course/10/service_test.log on ckad9043.
+1. **Namespace `pluto`** に **ClusterIP Service `project-plt-6cc-svc`** を作成してください。
+2. この Service が公開する **Pod `project-plt-6cc-api`** も作成します。
+
+   * イメージ: **`nginx:1.17.3-alpine`**
+   * Pod のラベル: **`project: plt-6cc-api`**
+3. Service のポートは **TCP 3333 → Pod 側 80** へポートリダイレクトしてください。
+
+最後に、テンポラリの **`nginx:alpine`** Pod などを使って Service に `curl` でアクセスし、
+
+* レスポンス内容を **`/opt/course/10/service_test.html`**（ckad9043 ノード）へ保存
+* さらに **`project-plt-6cc-api`** Pod のログにリクエストが記録されていることを確認し、そのログを **`/opt/course/10/service_test.log`** に書き込んでください。
+
 ====================================
 
 
@@ -429,21 +480,28 @@ Q11
 Question 11:
 Solve this question on instance: ssh ckad9043
 
-During the last monthly meeting you mentioned your strong expertise in container technology.  
-Now the Build&Release team of department Sun is in need of your insight knowledge.  
-There are files to build a container image located at /opt/course/11/image.  
-The container will run a Golang application which outputs information to stdout.  
-You're asked to perform the following tasks:
+あなたが月例ミーティングで披露した **コンテナ技術の知見** を、Sun 部門の Build\&Release チームが必要としています。
+イメージをビルドするためのファイルは **`/opt/course/11/image`** に置かれており、
+コンテナでは **標準出力に情報を出す Go アプリケーション** が動きます。
+以下の作業を行ってください。
 
-NOTE: Make sure to run all commands as user candidate; for docker use sudo docker
+> **注意**
+> すべてのコマンドはユーザ **`candidate`** で実行してください。
+> Docker を使うときは **`sudo docker`** を忘れずに。
 
-1. Change the Dockerfile. The value of the environment variable SUN_CIPHER_ID should be set to the hardcoded value 5b9c1065-e39d-4a43-a04a-e59bcea3e03f  
-2. Build the image using Docker, named registry.killer.sh:5000/sun-cipher, tagged as latest and v1-docker; push these to the registry  
-3. Build the image using Podman, named registry.killer.sh:5000/sun-cipher, tagged as v1-podman; push it to the registry  
-4. Run a container using Podman, which keeps running in the background, named sun-cipher using image registry.killer.sh:5000/sun-cipher:v1-podman.  
-   Run the container from candidate@ckad9043 and not root@ckad9043  
-5. Write the logs your container sun-cipher produced into /opt/course/11/logs.  
-   Then write a list of all running Podman containers into /opt/course/11/containers on ckad9043.
+1. **Dockerfile** を修正し、環境変数 **`SUN_CIPHER_ID`** の値を
+   **`5b9c1065-e39d-4a43-a04a-e59bcea3e03f`** にハードコードする。
+2. **Docker** でイメージをビルドし、
+   リポジトリ **`registry.killer.sh:5000/sun-cipher`** に
+   **`latest`** と **`v1-docker`** の 2 つのタグを付けてプッシュする。
+3. **Podman** でも同じイメージをビルドし、
+   タグ **`v1-podman`** を付けて同リポジトリにプッシュする。
+4. **Podman** を使い、バックグラウンドで動くコンテナ **`sun-cipher`** を起動する。
+   画像は **`registry.killer.sh:5000/sun-cipher:v1-podman`**。
+   実行ユーザは **`candidate@ckad9043`** であり、**`root@ckad9043`** ではないこと。
+5. そのコンテナ **`sun-cipher`** のログを **`/opt/course/11/logs`** に書き出す。
+   さらに、Podman で稼働中のコンテナ一覧を **`/opt/course/11/containers`** に保存する。
+
 
 
 ====================================
@@ -458,15 +516,28 @@ Q12
 Question 12:
 Solve this question on instance: ssh ckad5601
 
-Create a new PersistentVolume named earth-project-earthflower-pv.  
-It should have a capacity of 2Gi, accessMode ReadWriteOnce, hostPath /Volumes/Data and no storageClassName defined.
+1. **PersistentVolume を作成**
 
-Next, create a new PersistentVolumeClaim in Namespace earth named earth-project-earthflower-pvc.  
-It should request 2Gi storage, accessMode ReadWriteOnce and should not define a storageClassName.  
-The PVC should be bound to the PV correctly.
+   * 名前: **`earth-project-earthflower-pv`**
+   * 容量: **2 Gi**
+   * アクセスモード: **ReadWriteOnce**
+   * `hostPath`: **`/Volumes/Data`**
+   * **storageClassName は設定しない**
 
-Finally, create a new Deployment project-earthflower in Namespace earth which mounts that volume at /tmp/project-data.  
-The Pods of that Deployment should be of image httpd:2.4.41-alpine.
+2. **PersistentVolumeClaim を作成（Namespace `earth`）**
+
+   * 名前: **`earth-project-earthflower-pvc`**
+   * リクエスト容量: **2 Gi**
+   * アクセスモード: **ReadWriteOnce**
+   * **storageClassName は設定しない**
+   * 作成した PV と正しくバインドされていること
+
+3. **Deployment を作成（Namespace `earth`）**
+
+   * 名前: **`project-earthflower`**
+   * Pod イメージ: **`httpd:2.4.41-alpine`**
+   * 上記 PVC をマウントし、マウント先は **`/tmp/project-data`**
+
 ====================================
 
 
@@ -479,13 +550,25 @@ Q13
 Question 13:
 Solve this question on instance: ssh ckad9043
 
-Team Moonpie, which has the Namespace moon, needs more storage.  
-Create a new PersistentVolumeClaim named moon-pvc-126 in that namespace.  
-This claim should use a new StorageClass moon-retain with the provisioner set to moon-retainer and the reclaimPolicy set to Retain.  
-The claim should request storage of 3Gi, an accessMode of ReadWriteOnce and should use the new StorageClass.
+Moonpie チーム（Namespace **`moon`**）で追加ストレージが必要になりました。
+次の要件でリソースを作成してください。
 
-The provisioner moon-retainer will be created by another team, so it's expected that the PVC will not bind yet.  
-Confirm this by writing the log message from the PVC into file /opt/course/13/pvc-126-reason.
+1. **StorageClass `moon-retain`** を新規作成
+
+   * `provisioner`: **`moon-retainer`**
+   * `reclaimPolicy`: **`Retain`**
+
+2. **PersistentVolumeClaim `moon-pvc-126`** を Namespace **`moon`** に作成
+
+   * 要求容量: **3 Gi**
+   * アクセスモード: **`ReadWriteOnce`**
+   * 使用する StorageClass: **`moon-retain`**
+
+> ※ `moon-retainer` プロビジョナーは別チームが後で用意するため、PVC はまだ **Bound** 状態にならない見込みです。
+
+3. PVC のステータスに表示される **バインドできない理由メッセージ** を取得し、
+   **`/opt/course/13/pvc-126-reason`**（ckad9043 ノード）というファイルに書き込んでください。
+
 
 kubectl apply -f q13.yaml
 
@@ -504,14 +587,24 @@ Q14
 Question 14:
 Solve this question on instance: ssh ckad9043
 
-You need to make changes on an existing Pod in Namespace moon called secret-handler.  
-Create a new Secret secret1 which contains user=test and pass=pwd.  
-The Secret’s content should be available in Pod secret-handler as environment variables SECRET1_USER and SECRET1_PASS.  
-The YAML for Pod secret-handler is available at /opt/course/14/secret-handler.yaml.
+Moon ネームスペースにある **Pod `secret-handler`** を変更してください。
 
-There is existing YAML for another Secret at /opt/course/14/secret2.yaml; create this Secret and mount it inside the same Pod at /tmp/secret2.  
-Your changes should be saved under /opt/course/14/secret-handler-new.yaml on ckad9043.  
-Both Secrets should only be available in Namespace moon.
+1. **Secret `secret1`** を新規作成
+
+   * 内容: `user=test`, `pass=pwd`
+   * この Secret の値を **環境変数** として Pod に渡す
+
+     * `SECRET1_USER` → `user`
+     * `SECRET1_PASS` → `pass`
+
+2. `/opt/course/14/secret2.yaml` にある YAML を用いて **Secret `secret2`** を作成し、
+   Pod 内の **`/tmp/secret2`** にマウントする。
+
+3. Pod 定義ファイル（元は `/opt/course/14/secret-handler.yaml`）を編集し、
+   変更後の YAML を **`/opt/course/14/secret-handler-new.yaml`** に保存する。
+
+> ※ いずれの Secret も **Namespace `moon`** 内だけで利用できるようにしてください。
+
 
 kubectl apply -f q14-01.yaml,q14-02.yaml
 
@@ -574,12 +667,19 @@ Q15
 Question 15:
 Solve this question on instance: ssh ckad9043
 
-Team Moonpie has an nginx server Deployment called web-moon in Namespace moon.  
-Someone started configuring it but it was never completed.  
-To complete, please create a ConfigMap called configmap-web-moon-html containing the content of file /opt/course/15/web-moon.html under the data key-name index.html.
+Moonpie チーム（Namespace **`moon`**）には **`web-moon`** という nginx Deployment がありますが、設定が途中で止まっています。
+仕上げとして、次の作業を行ってください。
 
-The Deployment web-moon is already configured to work with this ConfigMap and serve its content.  
-Test the nginx configuration, for example using curl from a temporary nginx:alpine Pod.
+1. **ConfigMap `configmap-web-moon-html`** を作成する
+
+   * ファイル **`/opt/course/15/web-moon.html`** の内容を
+     `data` セクションの **キー名 `index.html`** に入れる
+
+2. Deployment **`web-moon`** は、この ConfigMap を読み込んで HTML を配信するように設定済みです。
+
+   * たとえば一時的な **`nginx:alpine`** Pod を立てて `curl` を実行し、
+     ページが正しく返ることを確認してください。
+
 
 kubectl apply -f q15.yaml
 
@@ -604,16 +704,27 @@ Q16
 Question 16:
 Solve this question on instance: ssh ckad7326
 
-The Tech Lead of Mercury2D decided it’s time for more logging, to finally fight all these missing data incidents.  
-There is an existing container named cleaner-con in Deployment cleaner in Namespace mercury.  
-This container mounts a volume and writes logs into a file called cleaner.log.
+Mercury2D のテックリードは、たび重なる “データ欠落インシデント” に対処するため **ログを強化** することにしました。
 
-The YAML for the existing Deployment is available at /opt/course/16/cleaner.yaml.  
-Persist your changes at /opt/course/16/cleaner-new.yaml on ckad7326 but also make sure the Deployment is running.
+* **Namespace `mercury`** にある Deployment **`cleaner`** には、
+  **`cleaner-con`** というコンテナが既に存在し、ボリュームをマウントして
+  **`cleaner.log`** というファイルにログを書き込んでいます。
 
-Create a sidecar container named logger-con, image busybox:1.31.0, which mounts the same volume and writes the content of cleaner.log to stdout (you can use tail -f for this).  
-This way it can be picked up by kubectl logs.  
-Check if the logs of the new container reveal something about the missing data incidents.
+* 現在の Deployment の YAML は **`/opt/course/16/cleaner.yaml`** にあります。
+  変更を加えたら **`/opt/course/16/cleaner-new.yaml`**（ckad7326 ノード）に保存し、
+  Deployment が正常に動いていることを確認してください。
+
+* **新たにサイドカーコンテナ `logger-con`** を追加してください。
+
+  * イメージ: **`busybox:1.31.0`**
+  * 先ほどと同じボリュームをマウント
+  * `cleaner.log` の内容を **標準出力 (stdout)** に流す
+    （例: `tail -f /var/log/cleaner/cleaner.log` など）
+    こうすると `kubectl logs` でログを参照できるようになります。
+
+* 最後に、新サイドカーのログを確認し、
+  **データ欠落インシデントに関する手掛かりが出力されていないか** チェックしてください。
+
 
 kubectl apply -f q16.yaml
 
@@ -665,16 +776,25 @@ Q17
 Question 17:
 Solve this question on instance: ssh ckad5601
 
-Last lunch you told your coworker from department Mars Inc how amazing InitContainers are.  
-Now he would like to see one in action.  
-There is a Deployment YAML at /opt/course/17/test-init-container.yaml.  
-This Deployment spins up a single Pod of image nginx:1.17.3-alpine and serves files from a mounted volume, which is empty right now.
+あなたは先日のランチで、Mars Inc 部門の同僚に **InitContainer の素晴らしさ** を熱弁しました。
+同僚は実際に動くところを見たいそうです。
 
-Create an InitContainer named init-con which also mounts that volume and creates a file index.html with content "check this out!" in the root of the mounted volume.  
-For this test we ignore that it doesn't contain valid HTML.
+* 既存の Deployment の YAML が **`/opt/course/17/test-init-container.yaml`** にあります。
+  これはイメージ **`nginx:1.17.3-alpine`** で 1 つの Pod を立ち上げ、
+  マウントされたボリュームからファイルを配信しますが、現在そのボリュームは空です。
 
-The InitContainer should be using image busybox:1.31.0.  
-Test your implementation, for example using curl from a temporary nginx:alpine Pod.
+**課題**
+
+1. **InitContainer `init-con`** を追加してください。
+
+   * イメージ: **`busybox:1.31.0`**
+   * アプリ本体と同じボリュームをマウントし、
+     ルート（マウント先）に **`index.html`** を作成し、内容は `"check this out!"` とする。
+     （正しい HTML でなくても構いません）
+
+2. 変更が反映されたら、たとえば一時的な **`nginx:alpine`** Pod から `curl` を実行し、
+   `index.html` が返ってくることを確認してください。
+
 
 kubectl apply -f q17.yaml
 
@@ -727,10 +847,16 @@ Q18
 Question 18:
 Solve this question on instance: ssh ckad5601
 
-There seems to be an issue in Namespace mars where the ClusterIP service manager-api-svc should make the Pods of Deployment manager-api-deployment available inside the cluster.
+Namespace **`mars`** にある **ClusterIP Service `manager-api-svc`** が、
+同じ名前空間の **Deployment `manager-api-deployment`** の Pod を公開できていないようです。
 
-You can test this with curl manager-api-svc.mars:4444 from a temporary nginx:alpine Pod.  
-Check for the misconfiguration and apply a fix.
+1. テスト方法
+
+   * 一時的に **`nginx:alpine`** の Pod を起動し、
+     `curl manager-api-svc.mars:4444` を実行して通信を確認する。
+
+2. **設定ミスを調べて修正** し、Service 経由で Pod にアクセスできる状態にしてください。
+
 
 kubectl apply -f q18-01.yaml,q18-02.yaml,q18-03.yaml,q18-04.yaml
 
@@ -807,11 +933,14 @@ Q19
 Question 19:
 Solve this question on instance: ssh ckad5601
 
-In Namespace jupiter you'll find an apache Deployment (with one replica) named jupiter-crew-deploy and a ClusterIP Service called jupiter-crew-svc which exposes it.  
-Change this Service to a NodePort one to make it available on all nodes on port 30100.
+Namespace **`jupiter`** には、レプリカ数 1 の Apache Deployment **`jupiter-crew-deploy`** と、それを公開する **ClusterIP Service `jupiter-crew-svc`** が存在します。
+この Service を **NodePort** タイプに変更し、**ポート 30100** でクラスタ内のすべてのノードからアクセスできるようにしてください。
 
-Test the NodePort Service using the internal IP of all available nodes and the port 30100 using curl; you can reach the internal node IPs directly from your main terminal.  
-On which nodes is the Service reachable? On which node is the Pod running?
+その後、各ノードの **内部 IP アドレス** と **ポート 30100** を使い、`curl` で NodePort Service をテストします（メイン端末からノード IP に直接アクセス可能）。
+
+* **どのノードで Service に到達できましたか？**
+* **Pod はどのノードで稼働していましたか？**
+
 
 kubectl apply -f q19-01.yaml,q19-02.yaml,q19-03.yaml
 
@@ -871,12 +1000,17 @@ Q20
 Question 20:
 Solve this question on instance: ssh ckad7326
 
-In Namespace venus you'll find two Deployments named api and frontend.  
-Both Deployments are exposed inside the cluster using Services.  
-Create a NetworkPolicy named np1 which restricts outgoing TCP connections from Deployment frontend and only allows those going to Deployment api.  
-Make sure the NetworkPolicy still allows outgoing traffic on UDP/TCP port 53 for DNS resolution.
+Namespace **`venus`** には **`api`** と **`frontend`** の 2 つの Deployment があり、どちらも Service でクラスター内に公開されています。
 
-Test using: wget www.google.com and wget api:2222 from a Pod of Deployment frontend.
+1. **NetworkPolicy `np1`** を作成し、Deployment **`frontend`** からの **外向き TCP 通信** を制限して、**Deployment `api` への通信だけを許可**してください。
+2. DNS 解決用に **UDP/TCP ポート 53** への外向き通信は引き続き許可する必要があります。
+
+動作確認:
+`frontend` の Pod から次を実行してテストしてください。
+
+* `wget www.google.com`
+* `wget api:2222`
+
 
 kubectl apply -f q20-01.yaml,q20-02.yaml,q20-03.yaml
 
@@ -941,12 +1075,19 @@ spec:
 Question 21:
 Solve this question on instance: ssh ckad7326
 
-Team Neptune needs 3 Pods of image httpd:2.4-alpine; create a Deployment named neptune-10ab for this.  
-The containers should be named neptune-pod-10ab.  
-Each container should have a memory request of 20Mi and a memory limit of 50Mi.
+Neptune チームでは、以下の要件で Deployment を作成してください。
 
-Team Neptune has its own ServiceAccount neptune-sa-v2 under which the Pods should run.  
-The Deployment should be in Namespace neptune.
+* **Deployment 名**: `neptune-10ab`
+* **Namespace**: `neptune`
+* **Pod 数**: 3
+* **コンテナ イメージ**: `httpd:2.4-alpine`
+* **コンテナ名**: `neptune-pod-10ab`
+* **リソース設定**:
+
+  * メモリ要求 (requests): 20 Mi
+  * メモリ制限 (limits): 50 Mi
+* **ServiceAccount**: `neptune-sa-v2`（この ServiceAccount で Pod を実行すること）
+
 
 kubectl apply -f q21.yaml
 
@@ -969,9 +1110,12 @@ metadata:
 Question 22:
 Solve this question on instance: ssh ckad9043
 
-Team Sunny needs to identify some of their Pods in namespace sun.  
-They ask you to add a new label protected: true to all Pods with an existing label type: worker or type: runner.  
-Also add an annotation protected: "do not delete this pod" to all Pods having the new label protected: true.
+Sun チーム（Namespace **`sun`**）では、特定の Pod を識別したいと考えています。
+
+* 既に **`type: worker`** または **`type: runner`** というラベルを持つ **すべての Pod** に、
+  **`protected: true`** という新しいラベルを追加してください。
+* さらに、新ラベル **`protected: true`** が付いた Pod には、
+  アノテーション **`protected: "do not delete this pod"`** も付与してください。
 
 kubectl apply -f q22-01.yaml,q22-02.yaml,q22-03.yaml
 
