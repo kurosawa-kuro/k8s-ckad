@@ -4,10 +4,33 @@ cd /home/wsl/dev/k8s-ckad/wsl/killer-sh
 
 alias k=kubectl
 export do="--dry-run=client -o yaml"
+kubectl config set-context --current --help | grep -A3 -B3 -- --namespace
 alias kn='kubectl config set-context --current --namespace '
 alias kcfg='kubectl get cm,secret,sa,role,pvc,svc,events -n'
 
 kubectl config set-context --current --help | grep -A3 -B3 -- --namespace
+kubectl create job my-job --image=busybox:1.31.0 --namespace=neptune --dry-run=client -o yaml -- /bin/sh -c "sleep 2 && echo done" > job.yaml
+kubectl get secret neptune-sa-v2-token -n neptune -o jsonpath={.data.token} | base64 -d
+kubectl run pod6 --image=busybox:1.31.0 --restart=Never --dry-run=client -o yaml --command -- /bin/sh -c 'touch /tmp/ready && sleep 1d' > pod6-skel.yaml                 # ← ファイルに保存
+kubectl explain pod --recursive | grep allowPrivilegeEscalation
+kubectl explain pod.spec.containers.securityContext.allowPrivilegeEscalation
+
+
+
+
+kubectl run project-plt-6cc-api --image=nginx:1.17.3-alpine --restart=Never --labels=project=plt-6cc-api --port=80 -n pluto
+kubectl expose pod project-plt-6cc-api --name=project-plt-6cc-svc --port=3333 --target-port=80 --type=ClusterIP -n pluto
+
+# 3. 一時コンテナから Service 経由アクセスし、レスポンスをホストへ保存
+kubectl run curl -n pluto --rm -it --restart=Never --image=curlimages/curl -- sh -c 'curl -s project-plt-6cc-svc:3333' > service_resp.html
+
+
+| フェーズ   | Kubernetes で指定するフィールド                         | 役割                             |
+| ------ | --------------------------------------------- | ------------------------------ |
+| **入口** | `Service.spec.ports[].port`                   | クライアントがアクセスする Service のポート     |
+| **出口** | `Service.spec.ports[].targetPort`             | kube-proxy が Pod に転送するときの宛先ポート |
+| **着地** | `Pod.spec.containers[].ports[].containerPort` | アプリが LISTEN している実ポート           |
+
 
 # c s s r p s e
 ====================================
@@ -34,7 +57,24 @@ Please write whilea command that does this into /home/wsl/dev/k8s-ckad/wsl/kille
 
 ====================================
 
-
+ESKTOP-M40H3KM:~/dev/k8s-ckad/wsl/killer-sh$ cat pod1.yaml 
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: null
+  labels:
+    run: pod1
+  name: pod1
+spec:
+  containers:
+  - image: httpd:2.4.41-alpine
+    name: pod1-container 
+    resources: {}
+  dnsPolicy: ClusterFirst
+  restartPolicy: Always
+status: {}
+wsl@DESKTOP-M40H3KM:~/dev/k8s-ckad/wsl/killer-sh$ k get pod > /home/wsl/dev/k8s-ckad/wsl/killer-sh/pod1-status-command.sh
+wsl@DESKTOP-M40H3KM:~/dev/k8s-ckad/wsl/killer-sh$ 
 
 
 
@@ -85,6 +125,10 @@ metadata:
   name: mercury
 ====================================
 
+ helm uninstall internal-issue-report-apiv1
+ helm upgrade internal-issue-report-apiv2
+ helm install internal-issue-report-apache bitnami/apache --set replicaCount=2
+
 ====================================
 Q5
 
@@ -93,7 +137,7 @@ Solve this question on instance: ssh ckad7326
 
 Team Neptune has its own ServiceAccount named neptune-sa-v2 in Namespace neptune.  
 A coworker needs the token from the Secret that belongs to that ServiceAccount.  
-Write the base64 decoded token to file /opt/course/5/token on ckad7326.
+Write the base64 decoded token to file ~/dev/k8s-ckad/wsl/killer-sh/token on ckad7326.
 
 kubectl apply -f q5.yaml
 
@@ -327,12 +371,12 @@ Solve this question on instance: ssh ckad9043
 
 In Namespace pluto there is a single Pod named holy-api. It has been working okay for a while now but Team Pluto needs it to be more reliable.
 
-Convert the Pod into a Deployment named holy-api with 3 replicas and delete the original Pod once done. The raw Pod template file is available at /opt/course/9/holy-api-pod.yaml.
+Convert the Pod into a Deployment named holy-api with 3 replicas and delete the original Pod once done. The raw Pod template file is available at holy-api-pod.yaml.
 
 In addition, the new Deployment should set `allowPrivilegeEscalation: false` and `privileged: false` in the container’s securityContext.  
-Please create the Deployment and save its YAML under /opt/course/9/holy-api-deployment.yaml.
+Please create the Deployment and save its YAML under holy-api-pod.yaml.
 
-kubectl apply -f q9-01.yaml,q9-02.yaml,q20-03.yaml
+kubectl apply -f q9-01.yaml,q9-02.yaml
 
 # q9-01.yaml
 apiVersion: v1
