@@ -15,9 +15,6 @@ kubectl run pod6 --image=busybox:1.31.0 --restart=Never --dry-run=client -o yaml
 kubectl explain pod --recursive | grep allowPrivilegeEscalation
 kubectl explain pod.spec.containers.securityContext.allowPrivilegeEscalation
 
-
-
-
 kubectl run project-plt-6cc-api --image=nginx:1.17.3-alpine --restart=Never --labels=project=plt-6cc-api --port=80 -n pluto
 kubectl expose pod project-plt-6cc-api --name=project-plt-6cc-svc --port=3333 --target-port=80 --type=ClusterIP -n pluto
 
