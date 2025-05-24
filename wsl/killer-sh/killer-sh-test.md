@@ -1,3 +1,7 @@
+killer.shの問題を自分のローカル環境で疑似testしたい
+その際に必要におなるリソースYAMLを教えてください
+求めているのは回答ではなく、testできる状況。
+
 cd /home/wsl/dev/k8s-ckad/wsl/script
 make reset-heavy
 cd /home/wsl/dev/k8s-ckad/wsl/killer-sh
@@ -25,6 +29,20 @@ kubectl create secret generic secret1 --from-literal=user=test --from-literal=pa
 kubectl get secret secret2 -n moon -o jsonpath={.data.config} | base64 -d
 
 kubectl explain pod.spec.containers.env
+
+kubectl expose deployment web-moon --name=web-moon --port=80 --target-port=80 -n moon
+kubectl get svc web-moon -n moon
+kubectl run curl -n moon --rm -it --restart=Never --image=curlimages/curl -- curl -s http://web-moon:80
+
+
+kubectl get pods -l app=cleaner -n mercury
+NEW_POD=$(kubectl get pod -l app=cleaner -n mercury -o jsonpath='{.items[?(@.status.phase=="Running")].metadata.name}')
+kubectl logs -f "$NEW_POD" -c logger-con -n mercury
+
+POD_IP=$(kubectl get pod -l app=test-init -n mars -o jsonpath='{.items[0].status.podIP}')
+kubectl run curl -n mars --rm -it --restart=Never --image=curlimages/curl -- curl -s http://$POD_IP:80
+
+kubectl run curl -n mars --rm -it --restart=Never --image=curlimages/curl -- curl -s http://manager-api-svc.mars:4444
 
 | フェーズ   | Kubernetes で指定するフィールド                         | 役割                             |
 | ------ | --------------------------------------------- | ------------------------------ |
@@ -830,7 +848,7 @@ Mercury2D のテックリードは、たび重なる “データ欠落インシ
   **`cleaner-con`** というコンテナが既に存在し、ボリュームをマウントして
   **`cleaner.log`** というファイルにログを書き込んでいます。
 
-* 現在の Deployment の YAML は **`/16/cleaner.yaml`** にあります。
+* 現在の Deployment の YAML は **`q16.yaml`** にあります。
   変更を加えたら **`/16/cleaner-new.yaml`**（ckad7326 ノード）に保存し、
   Deployment が正常に動いていることを確認してください。
 
@@ -867,24 +885,20 @@ spec:
         app: cleaner
     spec:
       containers:
-      # --- メイン処理コンテナ ----------------------------------
-      - name: cleaner-con
-        image: busybox:1.31.0        # 既存イメージが不明な場合のサンプル
-        command: ["sh", "-c", "while true; do echo \"$(date) - cleaning job ran\" >> /var/log/cleaner/cleaner.log; sleep 10; done"]
-        volumeMounts:
-        - name: logs-vol
-          mountPath: /var/log/cleaner
-      # --- 追加するサイドカー ----------------------------------
-      - name: logger-con
-        image: busybox:1.31.0
-        command: ["sh", "-c", "tail -F /var/log/cleaner/cleaner.log"]
-        volumeMounts:
-        - name: logs-vol
-          mountPath: /var/log/cleaner
-      # --------------------------------------------------------
+        # --- メイン処理コンテナ ----------------------------------
+        - name: cleaner-con
+          image: busybox:1.31.0   # 例
+          command: ["sh", "-c", "while true; \
+                     do echo \"$(date) - cleaning job ran\" \
+                     >> /var/log/cleaner/cleaner.log; \
+                     sleep 10; done"]
+          volumeMounts:
+            - name: logs-vol
+              mountPath: /var/log/cleaner
       volumes:
-      - name: logs-vol
-        emptyDir: {}                 # ログ保存用に両コンテナが共有
+        - name: logs-vol
+          emptyDir: {}            # ログを 2 つのコンテナで共有予定
+
 ====================================
 
 
@@ -923,7 +937,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: test-init
-  namespace: mars          # 好きな Namespace があれば変更してください
+  namespace: mars
   labels:
     app: test-init
 spec:
@@ -937,17 +951,8 @@ spec:
         app: test-init
     spec:
       volumes:
-        - name: content-vol      # ★ nginx と InitContainer で共有するボリューム
+        - name: content-vol
           emptyDir: {}
-      # ---- これから追加する InitContainer 用のスペース -----------------
-      # initContainers:
-      #   - name: init-con
-      #     image: busybox:1.31.0
-      #     command: ["sh", "-c", "echo 'check this out!' > /usr/share/nginx/html/index.html"]
-      #     volumeMounts:
-      #       - name: content-vol
-      #         mountPath: /usr/share/nginx/html
-      # ------------------------------------------------------------------
       containers:
         - name: nginx
           image: nginx:1.17.3-alpine

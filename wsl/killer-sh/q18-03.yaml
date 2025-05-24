@@ -9,6 +9,6 @@ spec:
     app: manager-api
   ports:
     - name: http
-      port: 4444          # ← クライアントがアクセスするポート
-      targetPort: 8888    # ← ★ Pod 側のポートと“ズレている”ため通信できない
+      port: 4444
+      targetPort: 8888
       protocol: TCP

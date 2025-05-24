@@ -16,21 +16,16 @@ spec:
         app: cleaner
     spec:
       containers:
-      # --- メイン処理コンテナ ----------------------------------
-      - name: cleaner-con
-        image: busybox:1.31.0        # 既存イメージが不明な場合のサンプル
-        command: ["sh", "-c", "while true; do echo \"$(date) - cleaning job ran\" >> /var/log/cleaner/cleaner.log; sleep 10; done"]
-        volumeMounts:
-        - name: logs-vol
-          mountPath: /var/log/cleaner
-      # --- 追加するサイドカー ----------------------------------
-      - name: logger-con
-        image: busybox:1.31.0
-        command: ["sh", "-c", "tail -F /var/log/cleaner/cleaner.log"]
-        volumeMounts:
-        - name: logs-vol
-          mountPath: /var/log/cleaner
-      # --------------------------------------------------------
+        # --- メイン処理コンテナ ----------------------------------
+        - name: cleaner-con
+          image: busybox:1.31.0   # 例
+          command: ["sh", "-c", "while true; \
+                     do echo \"$(date) - cleaning job ran\" \
+                     >> /var/log/cleaner/cleaner.log; \
+                     sleep 10; done"]
+          volumeMounts:
+            - name: logs-vol
+              mountPath: /var/log/cleaner
       volumes:
-      - name: logs-vol
-        emptyDir: {}                 # ログ保存用に両コンテナが共有
+        - name: logs-vol
+          emptyDir: {}            # ログを 2 つのコンテナで共有予定
