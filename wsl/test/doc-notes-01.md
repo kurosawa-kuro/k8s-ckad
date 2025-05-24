@@ -1,3 +1,8 @@
+cd /home/wsl/dev/k8s-ckad/wsl/script
+make reset-heavy
+cd /home/wsl/dev/k8s-ckad/wsl/test
+
+
   1. [kubectl run … --command の流れ](#1-kubectl-run--command-の流れ)  
      1-1. [--command](#1-1---command)  
      1-2. [--](#1-2---)  

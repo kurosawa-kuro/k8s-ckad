@@ -1,10 +1,6 @@
-  killer.shの問題を自分のローカル環境で疑似testしたい
-  その際に必要におなるリソースYAMLを教えてください
-  求めているのは回答ではなく、testできる状況。
-
 cd /home/wsl/dev/k8s-ckad/wsl/script
 make reset-heavy
-cd /home/wsl/dev/k8s-ckad/wsl/killer-sh
+cd /home/wsl/dev/k8s-ckad/wsl/test
 
 alias k=kubectl
 export do="--dry-run=client -o yaml"
