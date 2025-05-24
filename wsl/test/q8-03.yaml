@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-new-c32
+  namespace: neptune
+spec:
+  replicas: 3
+  selector:
+    matchLabels: { app: api-new-c32 }
+  template:
+    metadata:
+      labels: { app: api-new-c32 }
+      annotations:
+        commit: bad-v2                  # ← ★ わざと 1 行追加して差分を確実化
+    spec:
+      containers:
+        - name: backend
+          image: nginx:9.99-does-not-exist   # ❌ ImagePullBackOff
+          ports: [{ containerPort: 80 }]

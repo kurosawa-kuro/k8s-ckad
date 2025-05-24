@@ -1,0 +1,12 @@
+# q20-03.yaml  (api Service)
+apiVersion: v1
+kind: Service
+metadata:
+  name: api
+  namespace: venus
+spec:
+  selector: { app: api }
+  ports:
+    - port: 2222
+      targetPort: 2222
+      protocol: TCP

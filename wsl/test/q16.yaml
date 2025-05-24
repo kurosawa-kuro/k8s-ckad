@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cleaner
+  namespace: mercury
+  labels:
+    app: cleaner
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cleaner
+  template:
+    metadata:
+      labels:
+        app: cleaner
+    spec:
+      containers:
+        # --- メイン処理コンテナ ----------------------------------
+        - name: cleaner-con
+          image: busybox:1.31.0   # 例
+          command: ["sh", "-c", "while true; \
+                     do echo \"$(date) - cleaning job ran\" \
+                     >> /var/log/cleaner/cleaner.log; \
+                     sleep 10; done"]
+          volumeMounts:
+            - name: logs-vol
+              mountPath: /var/log/cleaner
+      volumes:
+        - name: logs-vol
+          emptyDir: {}            # ログを 2 つのコンテナで共有予定

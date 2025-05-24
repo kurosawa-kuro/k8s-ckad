@@ -1,0 +1,17 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-new-c32
+  namespace: neptune
+spec:
+  replicas: 3
+  selector:
+    matchLabels: { app: api-new-c32 }
+  template:
+    metadata:
+      labels: { app: api-new-c32 }
+    spec:
+      containers:
+        - name: backend
+          image: nginx:1.23-alpine        # ✅ pull 可能
+          ports: [{ containerPort: 80 }]

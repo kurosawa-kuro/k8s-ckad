@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: curl-test
+  namespace: mars
+spec:
+  containers:
+    - name: curl
+      image: nginx:alpine           # curl 入り最小イメージ
+      command: ["sh", "-c", "sleep infinity"]
+  restartPolicy: Never

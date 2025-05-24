@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: demo-claim
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: example-gp2
+  resources:
+    requests:
+      storage: 8Gi

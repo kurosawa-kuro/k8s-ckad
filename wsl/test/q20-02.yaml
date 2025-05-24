@@ -1,0 +1,26 @@
+# q20-02.yaml  (api)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api
+  namespace: venus
+  labels: { app: api }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: api }
+  template:
+    metadata:
+      labels: { app: api }
+    spec:
+      containers:
+        - name: api
+          image: busybox:1.31.0
+          command:
+            - sh
+            - -c
+            - |
+              echo '<h1>api OK</h1>' > /www/index.html
+              httpd -f -p 2222 -h /www
+          ports:
+            - containerPort: 2222

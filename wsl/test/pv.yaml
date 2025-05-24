@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-hostpath-01
+spec:
+  capacity:
+    storage: 5Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain   # PVC 削除後もデータ保持
+  storageClassName: manual               # 空文字でも可
+  hostPath:
+    path: /mnt/data

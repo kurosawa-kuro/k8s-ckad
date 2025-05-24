@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-moon
+  namespace: moon
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: web-moon
+  template:
+    metadata:
+      labels:
+        app: web-moon
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:1.25-alpine        # 任意で固定
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: web-html
+              mountPath: /usr/share/nginx/html
+      volumes:
+        - name: web-html
+          configMap:                      # ★ まだ存在しない
+            name: configmap-web-moon-html
+            items:
+              - key: index.html
+                path: index.html
