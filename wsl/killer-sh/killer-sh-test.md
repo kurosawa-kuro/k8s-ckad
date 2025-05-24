@@ -21,6 +21,9 @@ kubectl expose pod project-plt-6cc-api --name=project-plt-6cc-svc --port=3333 --
 # 3. 一時コンテナから Service 経由アクセスし、レスポンスをホストへ保存
 kubectl run curl -n pluto --rm -it --restart=Never --image=curlimages/curl -- sh -c 'curl -s project-plt-6cc-svc:3333' > service_resp.html
 
+kubectl create secret generic secret1 --from-literal=user=test --from-literal=pass=pwd --dry-run=client -oyaml > secret1.yaml
+
+
 
 | フェーズ   | Kubernetes で指定するフィールド                         | 役割                             |
 | ------ | --------------------------------------------- | ------------------------------ |
@@ -464,8 +467,8 @@ Pluto チームはクラスタ内部用の新しい Service を必要として�
 
 最後に、テンポラリの **`nginx:alpine`** Pod などを使って Service に `curl` でアクセスし、
 
-* レスポンス内容を **`/opt/course/10/service_test.html`**（ckad9043 ノード）へ保存
-* さらに **`project-plt-6cc-api`** Pod のログにリクエストが記録されていることを確認し、そのログを **`/opt/course/10/service_test.log`** に書き込んでください。
+* レスポンス内容を **`/10/service_test.html`**（ckad9043 ノード）へ保存
+* さらに **`project-plt-6cc-api`** Pod のログにリクエストが記録されていることを確認し、そのログを **`/10/service_test.log`** に書き込んでください。
 
 ====================================
 
@@ -478,7 +481,7 @@ Question 11:
 Solve this question on instance: ssh ckad9043
 
 あなたが月例ミーティングで披露した **コンテナ技術の知見** を、Sun 部門の Build\&Release チームが必要としています。
-イメージをビルドするためのファイルは **`/opt/course/11/image`** に置かれており、
+イメージをビルドするためのファイルは **`/11/image`** に置かれており、
 コンテナでは **標準出力に情報を出す Go アプリケーション** が動きます。
 以下の作業を行ってください。
 
@@ -496,8 +499,8 @@ Solve this question on instance: ssh ckad9043
 4. **Podman** を使い、バックグラウンドで動くコンテナ **`sun-cipher`** を起動する。
    画像は **`registry.killer.sh:5000/sun-cipher:v1-podman`**。
    実行ユーザは **`candidate@ckad9043`** であり、**`root@ckad9043`** ではないこと。
-5. そのコンテナ **`sun-cipher`** のログを **`/opt/course/11/logs`** に書き出す。
-   さらに、Podman で稼働中のコンテナ一覧を **`/opt/course/11/containers`** に保存する。
+5. そのコンテナ **`sun-cipher`** のログを **`/11/logs`** に書き出す。
+   さらに、Podman で稼働中のコンテナ一覧を **`/11/containers`** に保存する。
 
 
 
@@ -515,6 +518,7 @@ Solve this question on instance: ssh ckad5601
 
 1. **PersistentVolume を作成**
 
+    名前空間はearth
    * 名前: **`earth-project-earthflower-pv`**
    * 容量: **2 Gi**
    * アクセスモード: **ReadWriteOnce**
@@ -537,7 +541,68 @@ Solve this question on instance: ssh ckad5601
 
 ====================================
 
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: earth-project-earthflower-pv
+spec:
+  capacity:
+    storage: 2Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain   
+  storageClassName: ""
+  hostPath:
+    path: /Volumes/Data
 
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: earth-project-earthflower-pvc
+  namespace: earth
+spec:
+  accessModes:
+    - ReadWriteOnce
+  volumeMode: Filesystem
+  resources:
+    requests:
+      storage: 2Gi
+  storageClassName: ""
+
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: project-earthflower
+  name: project-earthflower
+  namespace: earth
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: project-earthflower
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: project-earthflower
+    spec:
+      containers:
+      - image: httpd:2.4.41-alpine
+        name: httpd
+        resources: {}
+        volumeMounts:
+        - name: vol
+          mountPath: /tmp/project-data
+      volumes:
+        - name: vol
+          persistentVolumeClaim:
+            claimName: earth-project-earthflower-pvc
 
 
 
@@ -564,7 +629,7 @@ Moonpie チーム（Namespace **`moon`**）で追加ストレージが必要に�
 > ※ `moon-retainer` プロビジョナーは別チームが後で用意するため、PVC はまだ **Bound** 状態にならない見込みです。
 
 3. PVC のステータスに表示される **バインドできない理由メッセージ** を取得し、
-   **`/opt/course/13/pvc-126-reason`**（ckad9043 ノード）というファイルに書き込んでください。
+   **`/13/pvc-126-reason`**（ckad9043 ノード）というファイルに書き込んでください。
 
 
 kubectl apply -f q13.yaml
@@ -576,7 +641,34 @@ metadata:
   name: moon
 ====================================
 
-
+q13-a.yaml
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: moon-retain
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "false"
+provisioner: moon-retainer
+reclaimPolicy: Retain 
+allowVolumeExpansion: true
+mountOptions:
+  - discard # this might enable UNMAP / TRIM at the block storage layer
+volumeBindingMode: WaitForFirstConsumer
+parameters:
+  guaranteedReadWriteLatency: "true" # provider-specific
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: moon-pvc-126
+  namespace: moon
+spec:
+  resources:
+    requests:
+      storage:3G
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: "moon-retain"
 
 ====================================
 Q14
@@ -584,37 +676,65 @@ Q14
 Question 14:
 Solve this question on instance: ssh ckad9043
 
-Moon ネームスペースにある **Pod `secret-handler`** を変更してください。
+You need to make changes on an existing Pod in Namespace moon called secret-handler.  
+Create a new Secret secret1 which contains user=test and pass=pwd.  
+The Secret’s content should be available in Pod secret-handler as environment variables SECRET1_USER and SECRET1_PASS.  
+The YAML for Pod secret-handler is available at /14/secret-handler.yaml.
 
-1. **Secret `secret1`** を新規作成
+There is existing YAML for another Secret at /14/secret2.yaml; create this Secret and mount it inside the same Pod at /tmp/secret2.  
+Your changes should be saved under /14/secret-handler-new.yaml on ckad9043.  
+Both Secrets should only be available in Namespace moon.
 
-   * 内容: `user=test`, `pass=pwd`
-   * この Secret の値を **環境変数** として Pod に渡す
+課題: Namespace moon にある Pod secret-handler の定義を修正してください。
 
-     * `SECRET1_USER` → `user`
-     * `SECRET1_PASS` → `pass`
+Secret secret1 を Namespace moon に新規作成し、下記キーを含めること。
 
-2. `/opt/course/14/secret2.yaml` にある YAML を用いて **Secret `secret2`** を作成し、
-   Pod 内の **`/tmp/secret2`** にマウントする。
+user=test
+pass=pwd
 
-3. Pod 定義ファイル（元は `/opt/course/14/secret-handler.yaml`）を編集し、
-   変更後の YAML を **`/opt/course/14/secret-handler-new.yaml`** に保存する。
+Pod では次の環境変数として参照できるようにすること。
 
-> ※ いずれの Secret も **Namespace `moon`** 内だけで利用できるようにしてください。
+SECRET1_USER → user
+SECRET1_PASS → pass
+
+/14/secret2.yaml にある YAML を適用して Secret secret2 を作成し、
+Pod 内の /tmp/secret2 にマウントすること。
+
+基本 YAML (/14/secret-handler.yaml) を編集し、
+変更後のファイルを /14/secret-handler-new.yaml として保存すること。
+
+両方の Secret は Namespace moon でのみ利用できるようにしてください。
 
 
 kubectl apply -f q14-01.yaml,q14-02.yaml
 
-# q14-01.yaml
+# /opt/course/14/secret-handler.yaml  ← apply しない
+apiVersion: v1
+kind: Pod
+metadata:
+  name: secret-handler
+  namespace: moon
+  labels:
+    app: secret-handler
+spec:
+  containers:
+    - name: secret-handler
+      image: busybox          # 元のイメージに置き換えて可
+      command: ["sleep", "3600"]
+  # ↓ ここから下は空。受験者が env / volume を追記して完成させる
+
+# /opt/course/14/secret2.yaml
 apiVersion: v1
 kind: Secret
 metadata:
-  name: secret1
+  name: secret2
   namespace: moon
-type: Opaque            # ← 文字列そのまま扱えるよう stringData を使用
+type: Opaque
 stringData:
-  user: test
-  pass: pwd
+  config: |
+    key=moon
+    region=space
+
 
 # q14-02.yaml
 apiVersion: v1
@@ -669,7 +789,7 @@ Moonpie チーム（Namespace **`moon`**）には **`web-moon`** という nginx
 
 1. **ConfigMap `configmap-web-moon-html`** を作成する
 
-   * ファイル **`/opt/course/15/web-moon.html`** の内容を
+   * ファイル **`/15/web-moon.html`** の内容を
      `data` セクションの **キー名 `index.html`** に入れる
 
 2. Deployment **`web-moon`** は、この ConfigMap を読み込んで HTML を配信するように設定済みです。
@@ -688,7 +808,7 @@ metadata:
   namespace: moon
 data:
   index.html: |
-    <!-- ここに /opt/course/15/web-moon.html の内容を貼り付ける -->
+    <!-- ここに /15/web-moon.html の内容を貼り付ける -->
 
 ====================================
 
@@ -707,8 +827,8 @@ Mercury2D のテックリードは、たび重なる “データ欠落インシ
   **`cleaner-con`** というコンテナが既に存在し、ボリュームをマウントして
   **`cleaner.log`** というファイルにログを書き込んでいます。
 
-* 現在の Deployment の YAML は **`/opt/course/16/cleaner.yaml`** にあります。
-  変更を加えたら **`/opt/course/16/cleaner-new.yaml`**（ckad7326 ノード）に保存し、
+* 現在の Deployment の YAML は **`/16/cleaner.yaml`** にあります。
+  変更を加えたら **`/16/cleaner-new.yaml`**（ckad7326 ノード）に保存し、
   Deployment が正常に動いていることを確認してください。
 
 * **新たにサイドカーコンテナ `logger-con`** を追加してください。
@@ -776,7 +896,7 @@ Solve this question on instance: ssh ckad5601
 あなたは先日のランチで、Mars Inc 部門の同僚に **InitContainer の素晴らしさ** を熱弁しました。
 同僚は実際に動くところを見たいそうです。
 
-* 既存の Deployment の YAML が **`/opt/course/17/test-init-container.yaml`** にあります。
+* 既存の Deployment の YAML が **`/17/test-init-container.yaml`** にあります。
   これはイメージ **`nginx:1.17.3-alpine`** で 1 つの Pod を立ち上げ、
   マウントされたボリュームからファイルを配信しますが、現在そのボリュームは空です。
 

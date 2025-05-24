@@ -1,0 +1,27 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: moon-retain
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "false"
+provisioner: moon-retainer
+reclaimPolicy: Retain 
+allowVolumeExpansion: true
+mountOptions:
+  - discard # this might enable UNMAP / TRIM at the block storage layer
+volumeBindingMode: WaitForFirstConsumer
+parameters:
+  guaranteedReadWriteLatency: "true" # provider-specific
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: moon-pvc-126
+  namespace: moon
+spec:
+  resources:
+    requests:
+      storage: 3Gi
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: "moon-retain"
