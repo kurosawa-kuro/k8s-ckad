@@ -1,6 +1,6 @@
-killer.shの問題を自分のローカル環境で疑似testしたい
-その際に必要におなるリソースYAMLを教えてください
-求めているのは回答ではなく、testできる状況。
+  killer.shの問題を自分のローカル環境で疑似testしたい
+  その際に必要におなるリソースYAMLを教えてください
+  求めているのは回答ではなく、testできる状況。
 
 cd /home/wsl/dev/k8s-ckad/wsl/script
 make reset-heavy
@@ -43,6 +43,13 @@ POD_IP=$(kubectl get pod -l app=test-init -n mars -o jsonpath='{.items[0].status
 kubectl run curl -n mars --rm -it --restart=Never --image=curlimages/curl -- curl -s http://$POD_IP:80
 
 kubectl run curl -n mars --rm -it --restart=Never --image=curlimages/curl -- curl -s http://manager-api-svc.mars:4444
+
+kubectl get nodes -o wide
+NODE_IP=192.168.49.2
+curl http://$NODE_IP:30100
+
+kubectl get pod -n sun -l 'type in (worker,runner)'
+
 
 | フェーズ   | Kubernetes で指定するフィールド                         | 役割                             |
 | ------ | --------------------------------------------- | ------------------------------ |
@@ -1106,13 +1113,13 @@ metadata:
   name: jupiter-crew-svc
   namespace: jupiter
 spec:
-  type: ClusterIP          # ← ここを NodePort に直し、nodePort: 30100 を追加する
+  type: ClusterIP
   selector:
     app: jupiter-crew
   ports:
     - name: http
-      port: 80            # サービスが公開するポート
-      targetPort: 80      # Pod 側のポート
+      port: 80
+      targetPort: 80
       protocol: TCP
 ====================================
 
@@ -1137,7 +1144,7 @@ Namespace **`venus`** には **`api`** と **`frontend`** の 2 つの Deploymen
 * `wget api:2222`
 
 
-kubectl apply -f q20-01.yaml,q20-02.yaml,q20-03.yaml
+kubectl apply -f q20-01.yaml,q20-02.yaml,q20-03.yaml,q20-04.yaml
 
 # q20-01.yaml
 apiVersion: v1
@@ -1242,7 +1249,7 @@ Sun チーム（Namespace **`sun`**）では、特定の Pod を識別したい�
 * さらに、新ラベル **`protected: true`** が付いた Pod には、
   アノテーション **`protected: "do not delete this pod"`** も付与してください。
 
-kubectl apply -f q22-01.yaml,q22-02.yaml,q22-03.yaml
+kubectl apply -f q22-01.yaml,q22-02.yaml
 
 # q22-01.yaml
 # neptune / sun それぞれの Namespace を作成

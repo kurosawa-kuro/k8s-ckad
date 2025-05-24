@@ -4,11 +4,11 @@ metadata:
   name: jupiter-crew-svc
   namespace: jupiter
 spec:
-  type: ClusterIP          # ← ここを NodePort に直し、nodePort: 30100 を追加する
+  type: ClusterIP
   selector:
     app: jupiter-crew
   ports:
     - name: http
-      port: 80            # サービスが公開するポート
-      targetPort: 80      # Pod 側のポート
+      port: 80
+      targetPort: 80
       protocol: TCP

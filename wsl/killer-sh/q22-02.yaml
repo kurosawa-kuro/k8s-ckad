@@ -1,26 +1,50 @@
-apiVersion: apps/v1
-kind: Deployment
+# ── worker 役 ──────────────────────────
+apiVersion: v1
+kind: Pod
 metadata:
-  name: neptune-10ab
-  namespace: neptune
+  name: worker-a
+  namespace: sun
   labels:
-    app: neptune-10ab
+    type: worker
 spec:
-  replicas: 1            # ← ★ ここを 3 に直す
-  selector:
-    matchLabels:
-      app: neptune-10ab
-  template:
-    metadata:
-      labels:
-        app: neptune-10ab
-    spec:
-      serviceAccountName: neptune-sa-v2
-      containers:
-        - name: neptune-pod-10ab     # ← ★ 課題どおり
-          image: httpd:2.4-alpine    # ← ★ 課題どおり
-          resources:
-            requests:
-              memory: "20Mi"         # ← ★ 課題どおり
-            limits:
-              memory: "50Mi"         # ← ★ 課題どおり
+  containers:
+    - name: pause
+      image: registry.k8s.io/pause:3.9
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: worker-b
+  namespace: sun
+  labels:
+    type: worker
+spec:
+  containers:
+    - name: pause
+      image: registry.k8s.io/pause:3.9
+# ── runner 役 ──────────────────────────
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: runner-a
+  namespace: sun
+  labels:
+    type: runner
+spec:
+  containers:
+    - name: pause
+      image: registry.k8s.io/pause:3.9
+# ── 判定用: 該当しない Pod ──────────────
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: misc-x
+  namespace: sun
+  labels:
+    type: misc
+spec:
+  containers:
+    - name: pause
+      image: registry.k8s.io/pause:3.9

@@ -944,41 +944,13 @@ metadata:
 ---
 # Neptune チーム用 ServiceAccount
 apiVersion: v1
-kind: ServiceAccount
+kind: Namespace
 metadata:
-  name: neptune-sa-v2
-  namespace: neptune
+  name: sun
+
 
 # q22-02.yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: neptune-10ab
-  namespace: neptune
-  labels:
-    app: neptune-10ab
-spec:
-  replicas: 1            # ← ★ ここを 3 に直す
-  selector:
-    matchLabels:
-      app: neptune-10ab
-  template:
-    metadata:
-      labels:
-        app: neptune-10ab
-    spec:
-      serviceAccountName: neptune-sa-v2
-      containers:
-        - name: neptune-pod-10ab     # ← ★ 課題どおり
-          image: httpd:2.4-alpine    # ← ★ 課題どおり
-          resources:
-            requests:
-              memory: "20Mi"         # ← ★ 課題どおり
-            limits:
-              memory: "50Mi"         # ← ★ 課題どおり
-
-# q22-03.yaml
-# worker 役
+# ── worker 役 ──────────────────────────
 apiVersion: v1
 kind: Pod
 metadata:
@@ -1002,8 +974,8 @@ spec:
   containers:
     - name: pause
       image: registry.k8s.io/pause:3.9
+# ── runner 役 ──────────────────────────
 ---
-# runner 役
 apiVersion: v1
 kind: Pod
 metadata:
@@ -1015,8 +987,8 @@ spec:
   containers:
     - name: pause
       image: registry.k8s.io/pause:3.9
+# ── 判定用: 該当しない Pod ──────────────
 ---
-# ラベルが条件に合わない Pod（動作確認用）
 apiVersion: v1
 kind: Pod
 metadata:
@@ -1028,4 +1000,5 @@ spec:
   containers:
     - name: pause
       image: registry.k8s.io/pause:3.9
+
 

@@ -1,17 +1,4 @@
-# neptune / sun それぞれの Namespace を作成
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: neptune
----
 apiVersion: v1
 kind: Namespace
 metadata:
   name: sun
----
-# Neptune チーム用 ServiceAccount
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: neptune-sa-v2
-  namespace: neptune
