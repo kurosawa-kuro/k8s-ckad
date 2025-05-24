@@ -38,6 +38,7 @@ Q1
 
 The DevOps team would like to get the list of all Namespaces in the cluster.  
 Get the list and save it to ~/dev/k8s-ckad/wsl/killer-sh/namespaces
+
 ====================================
 
 
