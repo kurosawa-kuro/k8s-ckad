@@ -21,15 +21,48 @@ kubectl expose pod project-plt-6cc-api --name=project-plt-6cc-svc --port=3333 --
 # 3. 一時コンテナから Service 経由アクセスし、レスポンスをホストへ保存
 kubectl run curl -n pluto --rm -it --restart=Never --image=curlimages/curl -- sh -c 'curl -s project-plt-6cc-svc:3333' > service_resp.html
 
-kubectl create secret generic secret1 --from-literal=user=test --from-literal=pass=pwd --dry-run=client -oyaml > secret1.yaml
+kubectl create secret generic secret1 --from-literal=user=test --from-literal=pass=pwd --dry-run=client -oyaml -n moon > secret1.yaml
+kubectl get secret secret2 -n moon -o jsonpath={.data.config} | base64 -d
 
-
+kubectl explain pod.spec.containers.env
 
 | フェーズ   | Kubernetes で指定するフィールド                         | 役割                             |
 | ------ | --------------------------------------------- | ------------------------------ |
 | **入口** | `Service.spec.ports[].port`                   | クライアントがアクセスする Service のポート     |
 | **出口** | `Service.spec.ports[].targetPort`             | kube-proxy が Pod に転送するときの宛先ポート |
 | **着地** | `Pod.spec.containers[].ports[].containerPort` | アプリが LISTEN している実ポート           |
+
+まとめ — “テンプレ暗記セット”
+yaml
+コピーする
+編集する
+# 1キーだけ ENV
+env:
+  - name: DB_PASS
+    valueFrom:
+      secretKeyRef:
+        name: db-secret
+        key: password
+
+# Secret 丸ごと ENV
+envFrom:
+  - secretRef:
+      name: db-secret
+      prefix: DB_
+yaml
+コピーする
+編集する
+# Secret マウント
+volumes:
+  - name: db-secret-vol
+    secret:
+      secretName: db-secret          # defaultMode は任意
+volumeMounts:
+  - name: db-secret-vol
+    mountPath: /etc/secret
+    readOnly: true
+この“型”を手元に置いておけば、Secret／ConfigMap／Downward API の問題は迷わずクリアできます。
+今回のコマンド集と合わせて、ぜひ CKAD・Killer.sh の本番チートシートに加えてください 🚀
 
 
 # c s s r p s e
@@ -676,15 +709,6 @@ Q14
 Question 14:
 Solve this question on instance: ssh ckad9043
 
-You need to make changes on an existing Pod in Namespace moon called secret-handler.  
-Create a new Secret secret1 which contains user=test and pass=pwd.  
-The Secret’s content should be available in Pod secret-handler as environment variables SECRET1_USER and SECRET1_PASS.  
-The YAML for Pod secret-handler is available at /14/secret-handler.yaml.
-
-There is existing YAML for another Secret at /14/secret2.yaml; create this Secret and mount it inside the same Pod at /tmp/secret2.  
-Your changes should be saved under /14/secret-handler-new.yaml on ckad9043.  
-Both Secrets should only be available in Namespace moon.
-
 課題: Namespace moon にある Pod secret-handler の定義を修正してください。
 
 Secret secret1 を Namespace moon に新規作成し、下記キーを含めること。
@@ -705,8 +729,6 @@ Pod 内の /tmp/secret2 にマウントすること。
 
 両方の Secret は Namespace moon でのみ利用できるようにしてください。
 
-
-kubectl apply -f q14-01.yaml,q14-02.yaml
 
 # /opt/course/14/secret-handler.yaml  ← apply しない
 apiVersion: v1
@@ -734,48 +756,6 @@ stringData:
   config: |
     key=moon
     region=space
-
-
-# q14-02.yaml
-apiVersion: v1
-kind: Pod
-metadata:
-  name: secret-handler
-  namespace: moon
-  labels:                # (元のラベルがあればそのまま)
-    app: secret-handler
-spec:
-  containers:
-  - name: secret-handler
-    image: # ... 元の image ...
-    # ... (command / args / ports など既存定義) ...
-    env:
-      - name: SECRET1_USER
-        valueFrom:
-          secretKeyRef:
-            name: secret1
-            key: user
-      - name: SECRET1_PASS
-        valueFrom:
-          secretKeyRef:
-            name: secret1
-            key: pass
-    volumeMounts:
-      - name: secret2-vol
-        mountPath: /tmp/secret2
-        readOnly: true
-      # ... 既存 volumeMount があればここに残す ...
-  volumes:
-    - name: secret2-vol
-      secret:
-        secretName: secret2
-        defaultMode: 0440
-    # ... 既存 volumes があればここに残す ...
-====================================
-
-
-
-
 
 
 ====================================
