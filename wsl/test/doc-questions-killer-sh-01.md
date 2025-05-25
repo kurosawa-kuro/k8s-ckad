@@ -1,3 +1,6 @@
+cd ~/dev/k8s-ckad/wsl/test
+./setup.sh
+
 cd /home/wsl/dev/k8s-ckad/wsl/script
 make reset-heavy
 cd /home/wsl/dev/k8s-ckad/wsl/test
