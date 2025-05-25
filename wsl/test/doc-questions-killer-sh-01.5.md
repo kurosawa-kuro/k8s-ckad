@@ -23,48 +23,10 @@ metadata:
   name: comet
 ```
 
----
-
-## Q24 StatefulSet + HeadlessSvc ―「nebula-redis」
-
-<details><summary>① 問題文</summary>
-
-* Namespace `nebula`, StatefulSet `nebula-redis` (replicas 3)
-* image `redis:7.2-alpine`, port 6379/TCP
-* Pod ごとに 2 Gi RWO PVC を動的生成
-* Headless Service `nebula-redis` で Stateful DNS を有効化
-
-</details>
-
-```yaml
-# q24-namespace.yaml
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: nebula
-```
 
 ---
 
-## Q25 DaemonSet ―「space-exporter」
 
-<details><summary>① 問題文</summary>
-
-* Namespace `galaxy`, DaemonSet `space-exporter`
-* image `prom/node-exporter:v1.8.1`, hostPort 9100
-* ノードラベル `node-role.kubernetes.io/gpu=true` が付く GPU ノードには配置しない
-
-</details>
-
-```yaml
-# q25-namespace.yaml
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: galaxy
-```
-
----
 
 ## Q26 Ambassador + PDB ―「starlight-api」
 
@@ -381,3 +343,222 @@ spec:
 >   ReplicaSet 比率を 4:1 → 5:0 に段階制御しても可。
 
 この YAML を適用後、課題のカナリア・ロールアウトを実施してください。
+
+
+auth can-i
+rolling-update
+
+### 新規追加 ― **Killer.sh レベル演習問題**
+
+---
+
+## Q36 RBAC & `kubectl auth can-i` チェック ―「galaxy-viewer」
+
+### ① 問題文
+
+> **Solve on instance:** `ssh ckadXXXX`
+
+1. **Namespace `auth-lab`** に ServiceAccount **`galaxy-viewer`** を作成してください。
+2. 初期状態で、**この SA では `get` 以外の Kubernetes API を実行できない** はずです。
+
+   * `kubectl auth can-i --as system:serviceaccount:auth-lab:galaxy-viewer delete pods -n auth-lab`
+     を実行し、**`no`** が返ることを確認してください。
+3. 続いて、ClusterRole/RoleBinding を組み合わせ、
+   **`pods/log` と `pods/exec`** に限り許可を与えてください
+   （`create`, `delete` などは引き続き禁止）。
+4. もう一度 `kubectl auth can-i` を実行し、
+
+   * `get` → **yes**
+   * `logs` → **yes**
+   * `delete` → **no**
+     がそれぞれ返ることを確認してください。
+5. 最後に、確認に使用した 3 行の `kubectl auth can-i …` コマンドを
+   **`~/auth-lab/verify.sh`** に記述し、実行権限を付与しておいてください。
+
+### ② スタータ YAML
+
+```yaml
+# q36-namespace.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: auth-lab
+---
+# q36-pod.yaml   ← ログ／exec テスト用のサンプル Pod
+apiVersion: v1
+kind: Pod
+metadata:
+  name: demo-pod
+  namespace: auth-lab
+spec:
+  containers:
+    - name: app
+      image: busybox:1.31.0
+      command: ["sh", "-c", "while true; do date; sleep 30; done"]
+```
+
+---
+
+## Q37 RollingUpdate で “瞬断ゼロ” バージョンアップ ―「zen-ui」
+
+### ① 問題文
+
+1. **Namespace `rolling-demo`** には Deployment **`zen-ui`**（replicas 6, image `nginx:1.23-alpine`）が稼働しています。
+2. サイトの SLA が厳格なため、**同時に落ちる Pod を 1 つだけ** に抑えつつ、新イメージ **`nginx:1.26-alpine`** へローリングアップデートしてください。
+
+   * `spec.strategy.rollingUpdate` を
+
+     * **`maxUnavailable: 1`**
+     * **`maxSurge: 2`**
+       にセットすること。
+3. アップデート途中で
+
+   ```bash
+   kubectl get pods -l app=zen-ui -w -n rolling-demo
+   ```
+
+   を実行し、常に **5 つ以上の Pod が Running** 状態を保っていることを確認してください（※自分で目視確認）。
+4. ロールアウト完了後、
+
+   * `kubectl rollout history deployment/zen-ui -n rolling-demo` で **Revision 2** のみが `nginx:1.26-alpine` になっていること
+   * `kubectl rollout status deployment/zen-ui -n rolling-demo` が *successfully rolled out* を返すこと
+     をスクリーンショット、またはコマンド履歴に残しておいてください。
+
+### ② スタータ YAML　
+
+```yaml
+# q37-namespace.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: rolling-demo
+---
+# q37-deploy-v1.yaml   ← まず apply して旧バージョンを稼働させる
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zen-ui
+  namespace: rolling-demo
+spec:
+  replicas: 6
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: zen-ui
+  template:
+    metadata:
+      labels:
+        app: zen-ui
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:1.23-alpine
+          ports:
+            - containerPort: 80
+```
+
+---
+
+**使い方メモ**
+
+1. まずスタータ YAML を `kubectl apply -f …` で流し込み既存環境を構築。
+2. その上で問題指示どおりに Role/RoleBinding 追加や `kubectl set image`→`rollout` 操作を行ってください。
+
+この 2 問で **`kubectl auth can-i` の権限制御** と **実践的 Rolling Update** の両方を演習できます。
+
+## 置き換え問題 ― **Q24  Taints & Tolerations ―「orbit-batch」**
+
+（元 DaemonSet“space-exporter”はスコープ外にしたため削除）
+
+---
+
+### ① 問題文【Killer.sh レベル／10-15 min 想定】
+
+> **Solve on instance:** `ssh ckad9999`
+
+1. **前提**
+   クラスタにはすでに 2 種類のノードがあります。
+
+   * **バッチ用ノード** → `node-role.kubernetes.io/batch=true` というラベル＆
+     タaint **`dedicated=batch:NoSchedule`** が設定済み
+   * **通常ノード** → タaint 無し
+
+2. **Namespace `orbit`** に Deployment **`orbit-batch`** を作成してください。
+
+   * replicas **3**
+   * image **`busybox:1.31.0`**
+   * command: `sh -c "while true; do echo batch >> /proc/1/fd/1; sleep 30; done"`
+
+3. **要件**
+
+   * **Pod は “バッチ用ノード” のみにスケジュール** されること
+     （`dedicated=batch:NoSchedule` を許容する **Toleration** を付与）
+   * ただしクラスタにバッチノードが 1 台しか無い場合でも
+     **最大 2 Pod までしか同じノードに載らない** よう、
+     **Pod Anti-Affinity** で `hostname` 別スプレッドを指定すること。
+
+4. 作成後、以下を実行して結果をスクリーンショット（またはコマンド履歴）に残してください。
+
+   ```bash
+   kubectl get pods -o wide -n orbit
+   # 期待: それぞれ batch ノード上。1 ノードに 2 Pod まで
+   kubectl describe node <BATCH_NODE> | grep Taints
+   # "dedicated=batch:NoSchedule" が確認できる
+   ```
+
+---
+
+### ② スタータ YAML
+
+```yaml
+# q24-namespace.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: orbit
+---
+# q24-taint-demo.yaml  ← 実環境に taint が無い場合は参考用
+# ※演習用に一時的に taint を付けたいときに apply
+# kubectl taint nodes <node-name> dedicated=batch:NoSchedule
+```
+
+> **ヒント**
+>
+> * Toleration テンプレ
+>
+>   ```yaml
+>   tolerations:
+>     - key: "dedicated"
+>       operator: "Equal"
+>       value: "batch"
+>       effect: "NoSchedule"
+>   ```
+> * Pod Anti-Affinity（ホスト名分散）
+>
+>   ```yaml
+>   affinity:
+>     podAntiAffinity:
+>       requiredDuringSchedulingIgnoredDuringExecution:
+>         - labelSelector:
+>             matchLabels:
+>               app: orbit-batch
+>           topologyKey: "kubernetes.io/hostname"
+>   ```
+
+---
+
+### ファイル一式（例）
+
+```
+q24-namespace.yaml
+q24-deploy.yaml          # ← 受験者が完成させる
+```
+
+この Q24 を DaemonSet の代わりに追加し、
+**Taints & Tolerations + (おまけで) Pod Anti-Affinity** を実戦形式で練習できます。
+
+
