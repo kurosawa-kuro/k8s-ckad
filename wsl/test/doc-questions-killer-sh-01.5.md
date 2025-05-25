@@ -296,3 +296,88 @@ q34-namespace.yaml
 
 これで問題番号が **23 – 34** となりました。
 必要に応じてさらに調整や解答例のリクエストをお知らせください！
+
+## Killer.sh 模試スタイル：**カナリア・ロールアウト課題（Q35）**
+
+---
+
+### ① 問題文 【所要 15 – 20 分想定】
+
+> **Solve on instance:** `ssh ckad9999`
+
+1. **Namespace `orion`** に既存 Deployment **`orion-api`** が稼働しています
+   （レプリカ **5**, イメージ **`nginx:1.21-alpine`**）。
+
+2. 新バージョン **`nginx:1.25-alpine`** を **“20 % カナリア”** で段階的に導入してください。
+
+   * **Step 1 – Canary**
+
+     * 新イメージを **1 Pod** （全体の 20 %）だけに展開。
+     * 旧イメージ 4 Pod ＋ 新イメージ 1 Pod となることを `kubectl get rs` で確認。
+   * **Step 2 – Full Rollout**
+
+     * 動作確認が取れたら、残り 80 % も新イメージへ切り替え、
+       Deployment が **全 5 Pod 新バージョン** で安定している状態に仕上げてください。
+
+3. RollingUpdate 設定は
+
+   * **`maxSurge: 1`**, **`maxUnavailable: 0`**
+     を指定すること。
+
+4. 最終的に
+
+   * `kubectl rollout status deploy/orion-api` が *successfully rolled out* を出力し、
+   * `kubectl describe deploy/orion-api` で **`Image: nginx:1.25-alpine`** が確認できる
+     ところまで実施してください。
+
+---
+
+### ② スタータ YAML
+
+```yaml
+# q35-namespace.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: orion
+---
+# q35-deploy-v1.yaml   ← まず apply して旧バージョンを動かす
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: orion-api
+  namespace: orion
+spec:
+  replicas: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: orion-api
+  template:
+    metadata:
+      labels:
+        app: orion-api
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:1.21-alpine
+          ports:
+            - containerPort: 80
+```
+
+> **ヒント**
+>
+> * 手順例（学習用）
+>
+>   1. `kubectl set image deployment/orion-api nginx=nginx:1.25-alpine --record`
+>   2. `kubectl rollout status --watch deployment/orion-api`
+>   3. `kubectl rollout pause deployment/orion-api` で 1 Pod だけに止める
+>   4. 動作確認後 `kubectl rollout resume deployment/orion-api`
+> * あるいは `--max-surge / --max-unavailable` を駆使して
+>   ReplicaSet 比率を 4:1 → 5:0 に段階制御しても可。
+
+この YAML を適用後、課題のカナリア・ロールアウトを実施してください。
