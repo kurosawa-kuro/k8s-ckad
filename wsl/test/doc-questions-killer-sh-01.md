@@ -94,7 +94,7 @@ volumeMounts:
 Q1
 
 DevOps チームは、クラスタ内に存在する **すべての Namespace の一覧を取得** したいと考えています。
-その一覧を取得し、`~/dev/k8s-ckad/wsl/killer-sh/namespaces` というファイルに保存してください。
+その一覧を取得し、`~/dev/k8s-ckad/wsl/test/namespaces` というファイルに保存してください。
 ====================================
 
 
@@ -114,30 +114,11 @@ Solve this question on instance: ssh ckad5601
 * 上司はときどきその Pod のステータスを手動で確認したいと考えています。
   **`kubectl` を使って Pod のステータスを出力するコマンド**を作成し、
   **ckad5601** ノードの
-  `~/dev/k8s-ckad/wsl/killer-sh/pod1-status-command.sh`
+  `~/dev/k8s-ckad/wsl/test/pod1-status-command.sh`
   に記述してください。
 
 
 ====================================
-
-ESKTOP-M40H3KM:~/dev/k8s-ckad/wsl/killer-sh$ cat pod1.yaml 
-apiVersion: v1
-kind: Pod
-metadata:
-  creationTimestamp: null
-  labels:
-    run: pod1
-  name: pod1
-spec:
-  containers:
-  - image: httpd:2.4.41-alpine
-    name: pod1-container 
-    resources: {}
-  dnsPolicy: ClusterFirst
-  restartPolicy: Always
-status: {}
-wsl@DESKTOP-M40H3KM:~/dev/k8s-ckad/wsl/killer-sh$ k get pod > /home/wsl/dev/k8s-ckad/wsl/killer-sh/pod1-status-command.sh
-wsl@DESKTOP-M40H3KM:~/dev/k8s-ckad/wsl/killer-sh$ 
 
 
 
@@ -181,7 +162,7 @@ Mercury チームから **Namespace `mercury`** 内で Helm を使って次の�
 
 1. **`internal-issue-report-apiv1`** というリリースを削除する
 2. **`internal-issue-report-apiv2`** リリースを、利用可能な **`bitnami/nginx`** チャートの新しいバージョンへアップグレードする
-3. **`bitnami/apache`** チャートを用いて、新しいリリース **`internal-issue-report-apache`** をインストールする
+3. **`helm `** チャートを用いて、新しいリリース **`internal-issue-report-apache`** をインストールする
 
    * その際、Helm の values で **Deployment のレプリカ数を 2** に設定する
 4. **`pending-install` 状態で止まっている壊れたリリース** があるので、特定して削除する
@@ -209,7 +190,7 @@ Solve this question on instance: ssh ckad7326
 Neptune チームは、**Namespace `neptune`** に **`neptune-sa-v2`** という ServiceAccount を持っています。
 この ServiceAccount に紐づく Secret の **トークン** を同僚が必要としています。
 **base64 デコードしたトークン文字列**を、**ckad7326** の
-`~/dev/k8s-ckad/wsl/killer-sh/token`
+`~/dev/k8s-ckad/wsl/test/q5/token`
 というファイルに書き込んでください。
 
 
@@ -273,7 +254,7 @@ Pod を作成し、正常に起動したことを確認してください。
 
 
 ====================================
-Q7
+Q7 問題再現が難しいので後回し
 
 Question 7:
 Solve this question on instance: ssh ckad7326
@@ -395,7 +376,7 @@ spec:
 
 
 ====================================
-Q8
+Q8 問題再現が難しいので後回し
 
 Question 8:
 Solve this question on instance: ssh ckad7326
@@ -532,7 +513,7 @@ Pluto チームはクラスタ内部用の新しい Service を必要として�
 
 
 ====================================
-Q11
+Q11 後回し中 Docker周りのtest準備対策は後回し中
 
 Question 11:
 Solve this question on instance: ssh ckad9043

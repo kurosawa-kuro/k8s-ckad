@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: null
+  labels:
+    project: plt-6cc-api
+  name: project-plt-6cc-sv
+  namespace: pluto
+spec:
+  ports:
+  - port: 3333
+    protocol: TCP
+    targetPort: 80
+  selector:
+    project: plt-6cc-api
+status:
+  loadBalancer: {}
