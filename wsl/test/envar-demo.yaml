@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: envar-demo
+  labels:
+    purpose: demonstrate-envars
+spec:
+  restartPolicy: Never
+  containers:
+  - name: envar-demo-container
+    image: busybox:1.36            # ← CKAD で確実に取れる公式レジストリ
+    command: ["/bin/sh", "-c","sleep 3600 && echo $DEMO_GREETING && echo $DEMO_FAREWELL"]     # ENTRYPOINT を明示
+    env:
+    - name: DEMO_GREETING
+      value: "Hello from the environment"
+    - name: DEMO_FAREWELL
+      value: "Such a sweet sorrow"

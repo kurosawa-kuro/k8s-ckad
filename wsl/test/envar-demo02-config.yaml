@@ -1,0 +1,8 @@
+apiVersion: v1
+data:
+  DEMO_FAREWELL: Such a sweet sorrow
+  DEMO_GREETING: Hello from the environment
+kind: ConfigMap
+metadata:
+  creationTimestamp: null
+  name: envar-demo02-config
