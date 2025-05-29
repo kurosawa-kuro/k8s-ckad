@@ -90,6 +90,240 @@ volumeMounts:
 
 
 # c s s r p s e
+
+====================================================================================================================================================================================================================================================================================================================================================================================================================================================================================
+
+====================================
+Q6
+
+Question 6:
+Solve this question on instance: ssh ckad5601
+
+* **default** ネームスペースに、イメージ **`busybox:1.31.0`** の **Pod を 1 つ** 作成してください。
+
+  * Pod 名：**`pod6`**
+
+* Pod には **readinessProbe** を設定し、コマンド **`cat /tmp/ready`** でヘルスチェックを行います。
+
+  * 最初の実行まで **5 秒待機**
+  * 以降は **10 秒間隔** でプローブ
+  * ファイル **`/tmp/ready`** が存在する場合のみコンテナを Ready と判定します。
+
+* コンテナの起動コマンドは
+  **`touch /tmp/ready && sleep 1d`**
+  とし、Ready 判定用のファイルを作成してから 1 日スリープします。
+
+Pod を作成し、正常に起動したことを確認してください。
+
+
+====================================
+
+
+====================================
+Q10
+
+Question 10:
+Solve this question on instance: ssh ckad9043
+
+Pluto チームはクラスタ内部用の新しい Service を必要としています。
+
+1. **Namespace `pluto`** に **ClusterIP Service `project-plt-6cc-svc`** を作成してください。
+2. この Service が公開する **Pod `project-plt-6cc-api`** も作成します。
+
+   * イメージ: **`nginx:1.17.3-alpine`**
+   * Pod のラベル: **`project: plt-6cc-api`**
+3. Service のポートは **TCP 3333 → Pod 側 80** へポートリダイレクトしてください。
+
+最後に、テンポラリの **`nginx:alpine`** Pod などを使って Service に `curl` でアクセスし、
+
+* レスポンス内容を **`/10/service_test.html`**（ckad9043 ノード）へ保存
+* さらに **`project-plt-6cc-api`** Pod のログにリクエストが記録されていることを確認し、そのログを **`/10/service_test.log`** に書き込んでください。
+
+====================================
+
+
+====================================
+Q18
+
+Question 18:
+Solve this question on instance: ssh ckad5601
+
+Namespace **`mars`** にある **ClusterIP Service `manager-api-svc`** が、
+同じ名前空間の **Deployment `manager-api-deployment`** の Pod を公開できていないようです。
+
+1. テスト方法
+
+   * 一時的に **`nginx:alpine`** の Pod を起動し、
+     `curl manager-api-svc.mars:4444` を実行して通信を確認する。
+
+2. **設定ミスを調べて修正** し、Service 経由で Pod にアクセスできる状態にしてください。
+
+
+kubectl apply -f q18-01.yaml,q18-02.yaml,q18-03.yaml,q18-04.yaml
+
+# q18-01.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: mars
+
+# q18-02.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: manager-api-deployment
+  namespace: mars
+  labels:
+    app: manager-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: manager-api
+  template:
+    metadata:
+      labels:
+        app: manager-api
+    spec:
+      containers:
+        - name: manager-api
+          image: nginx:1.17.3-alpine
+          ports:
+            - containerPort: 80
+
+# q18-03.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: manager-api-svc
+  namespace: mars
+spec:
+  type: ClusterIP
+  selector:
+    app: manager-api
+  ports:
+    - name: http
+      port: 4444          # ← クライアントがアクセスするポート
+      targetPort: 8888    # ← ★ Pod 側のポートと“ズレている”ため通信できない
+      protocol: TCP
+
+# q18-04.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: curl-test
+  namespace: mars
+spec:
+  containers:
+    - name: curl
+      image: nginx:alpine
+      command: ["sh", "-c", "sleep infinity"]
+  restartPolicy: Never
+
+# ❷ サービスにアクセスしてみる（まだ失敗するはず）
+kubectl exec -n mars curl-test -- curl -s --max-time 3 manager-api-svc.mars:4444 || echo "接続失敗"
+
+====================================
+
+====================================
+Q9
+
+Question 9:
+Solve this question on instance: ssh ckad9043
+
+Namespace **`pluto`** には、現在 **`holy-api`** という Pod が 1 つだけ稼働しています。これまでは問題なく動いていましたが、Pluto チームは **信頼性向上** のために複製数を増やしたいと考えています。
+
+1. この Pod を **Deployment** に変換し、名前は **`holy-api`**、**レプリカ数は 3** としてください。
+2. Deployment 作成後、**元の Pod は削除**してください。
+
+   * 参考用の生テンプレート（Pod 定義）は **`holy-api-pod.yaml`** にあります。
+3. 新しい Deployment のコンテナには **`securityContext`** を設定し、
+
+   * `allowPrivilegeEscalation: false`
+   * `privileged: false`
+     を明示してください。
+4. 作成した Deployment の YAML を **`holy-api-pod.yaml`** に保存してください。
+
+
+kubectl apply -f q9-01.yaml,q9-02.yaml
+
+# q9-01.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: pluto
+
+# q9-02.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: holy-api
+  namespace: pluto
+  labels:
+    app: holy-api
+spec:
+  containers:
+    - name: api
+      image: nginx:1.23-alpine   # 例:軽量で動作確認しやすい
+      ports:
+        - containerPort: 80
+====================================
+
+
+====================================
+Q14
+
+Question 14:
+Solve this question on instance: ssh ckad9043
+
+課題: Namespace moon にある Pod secret-handler の定義を修正してください。
+
+Secret secret1 を Namespace moon に新規作成し、下記キーを含めること。
+
+user=test
+pass=pwd
+
+Pod では次の環境変数として参照できるようにすること。
+
+SECRET1_USER → user
+SECRET1_PASS → pass
+
+/14/secret2.yaml にある YAML を適用して Secret secret2 を作成し、
+Pod 内の /tmp/secret2 にマウントすること。
+
+基本 YAML (/14/secret-handler.yaml) を編集し、
+変更後のファイルを /14/secret-handler-new.yaml として保存すること。
+
+両方の Secret は Namespace moon でのみ利用できるようにしてください。
+
+
+# /opt/course/14/secret-handler.yaml  ← apply しない
+apiVersion: v1
+kind: Pod
+metadata:
+  name: secret-handler
+  namespace: moon
+  labels:
+    app: secret-handler
+spec:
+  containers:
+    - name: secret-handler
+      image: busybox          # 元のイメージに置き換えて可
+      command: ["sleep", "3600"]
+  # ↓ ここから下は空。受験者が env / volume を追記して完成させる
+
+# /opt/course/14/secret2.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: secret2
+  namespace: moon
+type: Opaque
+stringData:
+  config: |
+    key=moon
+    region=space
+    
 ====================================
 Q1
 
@@ -226,30 +460,7 @@ type: kubernetes.io/service-account-token
 
 
 
-====================================
-Q6
 
-Question 6:
-Solve this question on instance: ssh ckad5601
-
-* **default** ネームスペースに、イメージ **`busybox:1.31.0`** の **Pod を 1 つ** 作成してください。
-
-  * Pod 名：**`pod6`**
-
-* Pod には **readinessProbe** を設定し、コマンド **`cat /tmp/ready`** でヘルスチェックを行います。
-
-  * 最初の実行まで **5 秒待機**
-  * 以降は **10 秒間隔** でプローブ
-  * ファイル **`/tmp/ready`** が存在する場合のみコンテナを Ready と判定します。
-
-* コンテナの起動コマンドは
-  **`touch /tmp/ready && sleep 1d`**
-  とし、Ready 判定用のファイルを作成してから 1 日スリープします。
-
-Pod を作成し、正常に起動したことを確認してください。
-
-
-====================================
 
 
 
@@ -441,74 +652,12 @@ spec:
 
 
 
-====================================
-Q9
-
-Question 9:
-Solve this question on instance: ssh ckad9043
-
-Namespace **`pluto`** には、現在 **`holy-api`** という Pod が 1 つだけ稼働しています。これまでは問題なく動いていましたが、Pluto チームは **信頼性向上** のために複製数を増やしたいと考えています。
-
-1. この Pod を **Deployment** に変換し、名前は **`holy-api`**、**レプリカ数は 3** としてください。
-2. Deployment 作成後、**元の Pod は削除**してください。
-
-   * 参考用の生テンプレート（Pod 定義）は **`holy-api-pod.yaml`** にあります。
-3. 新しい Deployment のコンテナには **`securityContext`** を設定し、
-
-   * `allowPrivilegeEscalation: false`
-   * `privileged: false`
-     を明示してください。
-4. 作成した Deployment の YAML を **`holy-api-pod.yaml`** に保存してください。
-
-
-kubectl apply -f q9-01.yaml,q9-02.yaml
-
-# q9-01.yaml
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: pluto
-
-# q9-02.yaml
-apiVersion: v1
-kind: Pod
-metadata:
-  name: holy-api
-  namespace: pluto
-  labels:
-    app: holy-api
-spec:
-  containers:
-    - name: api
-      image: nginx:1.23-alpine   # 例:軽量で動作確認しやすい
-      ports:
-        - containerPort: 80
-====================================
 
 
 
 
-====================================
-Q10
 
-Question 10:
-Solve this question on instance: ssh ckad9043
 
-Pluto チームはクラスタ内部用の新しい Service を必要としています。
-
-1. **Namespace `pluto`** に **ClusterIP Service `project-plt-6cc-svc`** を作成してください。
-2. この Service が公開する **Pod `project-plt-6cc-api`** も作成します。
-
-   * イメージ: **`nginx:1.17.3-alpine`**
-   * Pod のラベル: **`project: plt-6cc-api`**
-3. Service のポートは **TCP 3333 → Pod 側 80** へポートリダイレクトしてください。
-
-最後に、テンポラリの **`nginx:alpine`** Pod などを使って Service に `curl` でアクセスし、
-
-* レスポンス内容を **`/10/service_test.html`**（ckad9043 ノード）へ保存
-* さらに **`project-plt-6cc-api`** Pod のログにリクエストが記録されていることを確認し、そのログを **`/10/service_test.log`** に書き込んでください。
-
-====================================
 
 
 
@@ -708,59 +857,7 @@ spec:
     - ReadWriteOnce
   storageClassName: "moon-retain"
 
-====================================
-Q14
 
-Question 14:
-Solve this question on instance: ssh ckad9043
-
-課題: Namespace moon にある Pod secret-handler の定義を修正してください。
-
-Secret secret1 を Namespace moon に新規作成し、下記キーを含めること。
-
-user=test
-pass=pwd
-
-Pod では次の環境変数として参照できるようにすること。
-
-SECRET1_USER → user
-SECRET1_PASS → pass
-
-/14/secret2.yaml にある YAML を適用して Secret secret2 を作成し、
-Pod 内の /tmp/secret2 にマウントすること。
-
-基本 YAML (/14/secret-handler.yaml) を編集し、
-変更後のファイルを /14/secret-handler-new.yaml として保存すること。
-
-両方の Secret は Namespace moon でのみ利用できるようにしてください。
-
-
-# /opt/course/14/secret-handler.yaml  ← apply しない
-apiVersion: v1
-kind: Pod
-metadata:
-  name: secret-handler
-  namespace: moon
-  labels:
-    app: secret-handler
-spec:
-  containers:
-    - name: secret-handler
-      image: busybox          # 元のイメージに置き換えて可
-      command: ["sleep", "3600"]
-  # ↓ ここから下は空。受験者が env / volume を追記して完成させる
-
-# /opt/course/14/secret2.yaml
-apiVersion: v1
-kind: Secret
-metadata:
-  name: secret2
-  namespace: moon
-type: Opaque
-stringData:
-  config: |
-    key=moon
-    region=space
 
 
 ====================================
@@ -953,88 +1050,7 @@ spec:
 
 
 
-====================================
-Q18
 
-Question 18:
-Solve this question on instance: ssh ckad5601
-
-Namespace **`mars`** にある **ClusterIP Service `manager-api-svc`** が、
-同じ名前空間の **Deployment `manager-api-deployment`** の Pod を公開できていないようです。
-
-1. テスト方法
-
-   * 一時的に **`nginx:alpine`** の Pod を起動し、
-     `curl manager-api-svc.mars:4444` を実行して通信を確認する。
-
-2. **設定ミスを調べて修正** し、Service 経由で Pod にアクセスできる状態にしてください。
-
-
-kubectl apply -f q18-01.yaml,q18-02.yaml,q18-03.yaml,q18-04.yaml
-
-# q18-01.yaml
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: mars
-
-# q18-02.yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: manager-api-deployment
-  namespace: mars
-  labels:
-    app: manager-api
-spec:
-  replicas: 2
-  selector:
-    matchLabels:
-      app: manager-api
-  template:
-    metadata:
-      labels:
-        app: manager-api
-    spec:
-      containers:
-        - name: manager-api
-          image: nginx:1.17.3-alpine
-          ports:
-            - containerPort: 80
-
-# q18-03.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  name: manager-api-svc
-  namespace: mars
-spec:
-  type: ClusterIP
-  selector:
-    app: manager-api
-  ports:
-    - name: http
-      port: 4444          # ← クライアントがアクセスするポート
-      targetPort: 8888    # ← ★ Pod 側のポートと“ズレている”ため通信できない
-      protocol: TCP
-
-# q18-04.yaml
-apiVersion: v1
-kind: Pod
-metadata:
-  name: curl-test
-  namespace: mars
-spec:
-  containers:
-    - name: curl
-      image: nginx:alpine
-      command: ["sh", "-c", "sleep infinity"]
-  restartPolicy: Never
-
-# ❷ サービスにアクセスしてみる（まだ失敗するはず）
-kubectl exec -n mars curl-test -- curl -s --max-time 3 manager-api-svc.mars:4444 || echo "接続失敗"
-
-====================================
 
 
 
