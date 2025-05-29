@@ -67,13 +67,13 @@ kcfg neptune   # ← Namespace だけ後ろに付ける
 
 ```bash
 # 例: touch してから 1 日スリープする Pod 定義を YAML 生成
-kubectl run pod6 \
+kubectl run test-command \
   --image=busybox:1.31.0 \
+  --restart=Never \        # ← Job ライクにするなら付けておくとさらに安心
   --dry-run=client -o yaml \
-  --command -- sh -c "touch /tmp/ready && sleep 1d" \
-> pod6.yaml
+  --command -- /bin/sh -c "touch /tmp/ready && sleep 1d" \
+> test-command.yaml
 ```
-
 ---
 
 ## 2. `sh` と `-c`
