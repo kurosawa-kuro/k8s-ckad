@@ -1,5 +1,5 @@
 cd ~/dev/k8s-ckad/wsl/test
-./setup.sh
+./-setup.sh
 
 
   1. [kubectl run … --command の流れ](#1-kubectl-run--command-の流れ)  
@@ -59,20 +59,30 @@ kcfg neptune   # ← Namespace だけ後ろに付ける
 
 ## 1. `kubectl run --command` の流れ
 
-| フェーズ                   | オプション       | 役割                            |
-| ---------------------- | ----------- | ----------------------------- |
-| **① kubectl 側の解析終了**   | `--`        | これ以降はコンテナ内コマンドとして扱う           |
-| **② コンテナ command を明示** | `--command` | `command:` フィールドを自分で定義する宣言    |
-| **③ 複数コマンド実行**         | `sh -c "…"` | シェル経由で `cmd1 && cmd2 …` をまとめる |
+### 黒澤流 CKAD ポッド生成テンプレ（最短版）
+
+### CKAD 速攻テンプレ — 覚えるのはこれだけ
 
 ```bash
-# 例: touch してから 1 日スリープする Pod 定義を YAML 生成
-kubectl run test-command \
-  --image=busybox:1.31.0 \
-  --restart=Never \        # ← Job ライクにするなら付けておくとさらに安心
+kubectl run <pod> \
+  --image=busybox:1.36 \
   --dry-run=client -o yaml \
-  --command -- /bin/sh -c "touch /tmp/ready && sleep 1d" \
-> test-command.yaml
+  --command -- /bin/sh -c '<cmd>; sleep 3600' \
+  > <pod>.yaml
+```
+
+| フラグ          | 意味                |
+| ------------ | ----------------- |
+| `--`         | ここから先はコンテナ内で実行    |
+| `--command`  | ENTRYPOINT を自前で指定 |
+| `/bin/sh -c` | どのイメージでも通る共通シェル   |
+
+* **bash 機能が必要なら** → `ubuntu` イメージに替え `/bin/bash -c`
+* **シェル存在確認** → `kubectl exec -it <pod> -- ls /bin/{sh,bash}`
+
+これ1本＋置換ルールだけで CKAD の Pod 生成タスクは攻略できます。
+
+
 ```
 ---
 
