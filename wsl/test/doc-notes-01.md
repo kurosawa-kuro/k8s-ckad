@@ -64,11 +64,10 @@ kcfg neptune   # ← Namespace だけ後ろに付ける
 ### CKAD 速攻テンプレ — 覚えるのはこれだけ
 
 ```bash
-kubectl run <pod> \
+kubectl run envar-demo01 \
   --image=busybox:1.36 \
   --dry-run=client -o yaml \
-  --command -- /bin/sh -c '<cmd>; sleep 3600' \
-  > <pod>.yaml
+  --command -- /bin/sh -c 'sleep 3600 && echo "Hello"' > envar-demo01.yaml
 ```
 
 | フラグ          | 意味                |
