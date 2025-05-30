@@ -2,6 +2,56 @@
 
 > **目的**: CKAD 本試験 (20 問・120 分) を想定し、**タイムロス最小化** のために必要十分なコマンドと TIPS を 1 シートに凝縮しました。重複していた説明・コマンドを統合し、見出し階層を整理しています。
 
+暗記すべきものを ブロック単位で整理すること
+ブロック名	中身	学ぶ順番の目安
+✅ 基本構成ブロック	Pod / Deployment / Container / Image / Port / RestartPolicy	最初にやる。骨組み理解
+✅ 設定注入ブロック	env / envFrom / ConfigMap / Secret / VolumeMount	2番目。よく出る
+✅ ネットワークブロック	Service / Ingress / NetworkPolicy / port-forward	3番目。疎通系まとめて
+✅ 健康チェックブロック	livenessProbe / readinessProbe / startupProbe	4番目。テンプレ暗記でカバー
+✅ スケジューリングブロック	Affinity / Toleration / NodeSelector	5番目。必ず1問出るレベル
+✅ ロール・認可ブロック	ServiceAccount / Role / RoleBinding	難しめ。6番目以降に回す
+✅ 運用・変更ブロック	rollout / patch / annotate / label	CLI操作訓練に集約
+✅ ジョブ系ブロック	Job / CronJob	難しくないが構文忘れがち。試験前に復習
+✅ 補助技術	kubectl explain / --dry-run / kubectl auth can-i	試験中に助けになる武器。早めに身につけて損なし
+
+# 解法メモ
+
+環境変数確認
+環境変数が既に設定済み、Podデプロイ済み
+k exec -itでコンテナに対話型でログインしてenv表示
+
+secret確認
+k get secretでエンコード済みだが、確認し
+jsonpath'{.data}'base64 -dでデコード
+
+
+
+
+
+========================
+
+
+イメージで覚える 3 行まとめ
+Label → リソース間を「線でつなぐ名札」
+
+mermaid
+コピーする
+編集する
+graph LR
+  subgraph Selector
+    SVC(Service) -- app=web --> POD(Pod)
+  end
+Annotation → 名札の裏に書く「メモ書き／スイッチ」
+検索に使えないが、読んだ人(Controller)は行動を変える
+ 例：kubectl.kubernetes.io/restartedAt ⇒ “いま全 Pod 作り直せ”
+
+provisioner → StorageClass が持つ「どの工場でディスク作る？」指示書
+PVC ➜ SC ➜ provisioner ➜ CSI ドライバ ➜ 物理ボリューム
+
+これだけは区別して覚えるキーワード
+“名札” = Label	“裏メモ” = Annotation	“工場指定” = provisioner
+Selector で使う	Selector で使わない	StorageClass 専用フィールド
+
 ---
 
 ## 目次
