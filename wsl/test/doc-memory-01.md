@@ -25,20 +25,91 @@
 >
 > *Container 専用項目*: `capabilities`, `privileged`, `readOnlyRootFilesystem`, `allowPrivilegeEscalation`
 
+
+
 ---
 
-## 解法メモ
+## CKAD 解法メモ（簡易版）
 
-* **環境変数確認**
-  *既に設定済み・Pod デプロイ済み* → `k exec -it <pod> -- env` で一覧確認。
+> **範囲限定**: ユーザー指定の代表コマンドのみを抜粋して整理。
 
-* **Secret 確認**
-  `k get secret <name> -o jsonpath='{.data}' | base64 -d` でデコード。
+---
 
-* **基本的なサービス利用したアクセス方法**
+### 1. 環境変数確認
 
-  1. `k get svc` でポート番号取得。
-  2. `curl <service>:<ポート>` で疎通。
+```
+# Pod 内の環境変数をすべて表示
+k exec -it <pod> -- env
+```
+
+---
+
+### 2. Secret 確認
+
+```
+# Key/Value をデコード表示
+k get secret <name> -o jsonpath='{.data}' | base64 -d
+
+# Secret の中身 (raw JSON)
+k get secret <name> -o json
+```
+
+---
+
+### 3. ConfigMap 確認
+
+```
+# ConfigMap を YAML で確認
+k get cm <name> -o yaml
+```
+
+---
+
+### 4. サービス疎通（基本ルート）
+
+1. **ポート番号取得**
+
+   ```
+   k get svc
+   ```
+2. **curl で疎通**
+
+   ```
+   curl <service>:<ポート>
+   ```
+
+#### 即席 Pod ワンライナー
+
+```
+k run tmp --rm -it --restart=Never --image=curlimages/curl:8.8.0 -- http://svc:8080
+```
+
+#### 既存 Pod に curl がある場合
+
+```
+k exec -it <pod> -- curl -s http://svc:8080
+```
+
+---
+
+### 5. Volume マウント確認
+
+```
+k exec -it <pod> -- ls /mnt/secret
+```
+
+---
+
+### 6. ServiceAccount の権限チェック
+
+```
+k auth can-i get pods --as system:serviceaccount:my-ns:sa-name
+```
+
+---
+
+> 📝 **使い方**: 上から順にコピペ → 必要箇所 (<pod> や <name>) を置換するだけで即実行。
+
 
 ---
 
