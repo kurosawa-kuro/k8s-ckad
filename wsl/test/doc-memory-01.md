@@ -2,17 +2,22 @@
 
 > **目的**: CKAD 本試験 (20 問・120 分) を想定し、**タイムロス最小化** のために必要十分なコマンドと TIPS を 1 シートに凝縮しました。重複していた説明・コマンドを統合し、見出し階層を整理しています。
 
-暗記すべきものを ブロック単位で整理すること
-ブロック名	中身	学ぶ順番の目安
-✅ 基本構成ブロック	Pod / Deployment / Container / Image / Port / RestartPolicy	最初にやる。骨組み理解
-✅ 設定注入ブロック	env / envFrom / ConfigMap / Secret / VolumeMount	2番目。よく出る
-✅ ネットワークブロック	Service / Ingress / NetworkPolicy / port-forward	3番目。疎通系まとめて
-✅ 健康チェックブロック	livenessProbe / readinessProbe / startupProbe	4番目。テンプレ暗記でカバー
-✅ スケジューリングブロック	Affinity / Toleration / NodeSelector	5番目。必ず1問出るレベル
-✅ ロール・認可ブロック	ServiceAccount / Role / RoleBinding	難しめ。6番目以降に回す
-✅ 運用・変更ブロック	rollout / patch / annotate / label	CLI操作訓練に集約
-✅ ジョブ系ブロック	Job / CronJob	難しくないが構文忘れがち。試験前に復習
-✅ 補助技術	kubectl explain / --dry-run / kubectl auth can-i	試験中に助けになる武器。早めに身につけて損なし
+| ブロック名              | 中身                                                          | 学ぶ順番の目安                                       |
+| ------------------ | ----------------------------------------------------------- | --------------------------------------------- |
+| ✅ **基本構成ブロック**     | Pod / Deployment / Container / Image / Port / RestartPolicy | 最初にやる。骨組み理解                                   |
+| ✅ **設定注入ブロック**     | env / envFrom / ConfigMap / Secret / VolumeMount            | 2番目。よく出る                                      |
+| ✅ **ネットワークブロック**   | Service / Ingress / NetworkPolicy / port-forward            | 3番目。疎通系まとめて                                   |
+| ✅ **健康チェックブロック**   | livenessProbe / readinessProbe / startupProbe               | 4番目。テンプレ暗記でカバー                                |
+| ✅ **スケジューリングブロック** | Affinity / Toleration / NodeSelector                        | 5番目。必ず1問出るレベル                                 |
+| ✅ **ロール・認可ブロック**   | ServiceAccount / Role / RoleBinding                         | 難しめ。6番目以降に回す                                  |
+| ✅ **運用・変更ブロック**    | rollout / patch / annotate / label                          | CLI操作訓練に集約                                    |
+| ✅ **ジョブ系ブロック**     | Job / CronJob                                               | 難しくないが構文忘れがち。試験前に復習                           |
+| ✅ **セキュリティブロック**   | securityContext / runAsNonRoot / fsGroup / capabilities   | 実務でも評価される。中級レベル。 `kubectl explain`とセットで覚えると強い |
+| ✅ **補助技術**         | kubectl explain / --dry-run / kubectl auth can-i      | 試験中に助けになる武器。早めに身につけて損なし                       |
+
+
+CKADの範囲で問われる securityContext は、ほぼ100％が containers 側の設定です。
+Container専用項目	capabilities, privileged, readOnlyRootFilesystem, allowPrivilegeEscalation
 
 # 解法メモ
 
