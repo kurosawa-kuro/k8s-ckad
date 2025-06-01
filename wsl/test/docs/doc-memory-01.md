@@ -110,7 +110,15 @@ k auth can-i get pods --as system:serviceaccount:my-ns:sa-name
 
 > 📝 **使い方**: 上から順にコピペ → 必要箇所 (<pod> や <name>) を置換するだけで即実行。
 
+次におすすめの “細かいところ” ステップ
+テーマ	1 行ドリル	失点しやすいポイント
+Pod レベルの Probe	startupProbe・livenessProbe の違いを YAML で書き分ける	failureThreshold × periodSeconds の計算忘れ
+Volume & Mount	EmptyDir を scratch 領域として使う Job を作成	mountPath と name のタイポ
+秘密情報	kubectl create secret generic → Pod で envFrom	Secret を echo -n で Base64 にし忘れ
+ConfigMap 差し替え	kubectl create configmap → 再ロードまでの流れ	--from-literal / --from-file の混同
+パッチ系コマンド	kubectl patch job ... を —type=merge と strategic で練習	JSONPath の引用 ' / \" 迷子
 
+1 日 2 テーマずつ小さい YAML を打ち込んで kubectl explain で型を確認する──この**“書く→ explain→ apply” のループ**を回せば、試験本番で手が勝手に動きます。
 ---
 
 ## イメージで覚える 3 行まとめ
