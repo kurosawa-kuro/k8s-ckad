@@ -4,6 +4,202 @@
 
 > **目的**: CKAD 本試験 (20 問・120 分) を想定し、**タイムロス最小化** のために必要十分なコマンドと TIPS を 1 シートに凝縮しました。重複していた説明・コマンドを統合し、見出し階層を整理しています。
 
+おっしゃるとおり **“Workloads（Pod／Deployment／ReplicaSet…）が最前線”** で、
+Probe・PVC・NetPol・Job は **その次のレイヤ** という整理のほうが実態に合います。
+先ほどの「主戦４テーマ」は *「Workload が出来ている前提で＋α」* を意図していましたが、
+優先度を改めて 3 階層でまとめ直します。
+
+---
+
+## CKAD 66 % 攻略 優先度ピラミッド
+
+| Tier                      | 必要配点めやす     | 内容                                                                      | 典型タスク                                                                                   | 1 問あたり目標時間  |
+| ------------------------- | ----------- | ----------------------------------------------------------------------- | --------------------------------------------------------------------------------------- | ----------- |
+| **0️⃣ Core Workloads**    | **35–40 %** | Pod / Deployment / ReplicaSet / Service (ClusterIP・NodePort)            | - `kubectl run` → Probe無しで動作<br>- Deployment へ変換・replicas変更<br>- Service パッチ            | **2–4 min** |
+| **1️⃣ 準主戦 (Workload 拡張)** | **25–30 %** | Probe / PVC(+PV) / Job・CronJob / NetworkPolicy **★**                    | - Probe 3 行追加<br>- hostPath PV＋PVC<br>- Job completions／Cron schedule<br>- NP egress 制限 | **3–5 min** |
+| **2️⃣ 周辺 (取れれば上積み)**      | 20 % 程度     | ConfigMap / Secret / RBAC / HPA / Ingress / PodDisruptionBudget         | - Secret env / volumeMount<br>- SA 権限 can-i<br>- HPA yaml 1 枚                           | **4–6 min** |
+| **3️⃣ 捨てても可**             | 残り          | Helm / Docker・Podman ビルド / NodeAffinity・PriorityClass / StorageClass 作成 | - バンドル問題 or 実務風おまけ                                                                      | **8 min+**  |
+
+> **66 % 合格ライン** ＝ **Tier 0 + Tier 1 を満点近く取ればほぼ到達**
+> Tier 2 で 1〜2 題拾えば安全圏。
+
+---
+
+### Tier 0：Core Workloads に必須で覚える 5 コマンド
+
+```bash
+# ① Pod 雛形 → 編集で Deployment 化も可
+k run podx --image=nginx $do > pod.yaml
+
+# ② Deployment 雛形
+k create deploy depx --image=nginx $do > dep.yaml
+
+# ③ Deployment レプリカ変更ワンライナー
+k scale deploy depx --replicas=3
+
+# ④ Service (ClusterIP → NodePort)
+k expose deploy depx --port 80 --target-port 8080 $do > svc.yaml
+kubectl patch svc depx -p '{"spec":{"type":"NodePort","ports":[{"port":80,"nodePort":30100}]}}'
+
+# ⑤ ログ／Describe／イベント確認
+k logs -f pod/podx
+k describe pod podx
+k get events -A | grep -i warning
+```
+
+---
+
+### Tier 1：準主戦 4 テーマの最小 YAML 覚え方
+
+| テーマ               | 最小ブロック                                                 |
+| ----------------- | ------------------------------------------------------ |
+| **Probe**         | readinessProbe3行＋`initialDelaySeconds & periodSeconds` |
+| **PVC/PV**        | PV (hostPath, 2 Gi) + PVC (RWO, "" SC) + volumeMount   |
+| **Job**           | `{completions:3, parallelism:2, restartPolicy: Never}` |
+| **NetworkPolicy** | `policyTypes:["Egress"]` + api podSelector + DNS 53 例外 |
+
+---
+
+## 学習ロードマップ（合格だけ狙う）
+
+1. **Day 1** — *Tier 0* だけで Killer.sh を 1 周
+2. **Day 2** — Probe / PVC / Job / NP の雛形を各 5 回手打ち
+3. **Day 3** — Killer.sh を S/M/L 戦略で 2 h → 70 % を確認
+4. **Day 4** — Tier 2 から 2 テーマ (Secret & HPA) を追加練習
+5. **本番** — Tier 0→1 を確実に取り、時間余れば Tier 2 を拾う
+
+---
+
+### まとめ
+
+* **最優先は Tier 0（Workloads 基礎）** — ここが取れなければ何も始まらない
+* **Probe / PVC / NetPol / Job は “準主戦”**：Workload 完了後に点を積む場所
+* **66 % だけなら Tier 0+1 で足りる** -- 満点を狙うなら Tier 2 以降を拡張
+
+これで “どこに学習時間を割くか” がクリアになるはずです。
+
+
+## CKAD を **“合格点だけ拾って逃げ切る”** 超実戦メソッド
+
+（90 m 前後で 66 % クリアを狙う）
+
+> 本番 UI（PSI）には -
+> *左ペイン*：問題一覧 〔◎未着手／●回答済み／⚑フラグ〕
+> *右ペイン*：メモパッド（問題ごとに独立保存）
+> があります。ここを徹底的に使い切るのが “タイム勝負” の鍵。
+
+---
+
+### ❶ 5 分で「全題目スキャン ➜ 優先度タグ付け」
+
+| ラベル                      | 目安                         | 例                   | 行動                  |
+| ------------------------ | -------------------------- | ------------------- | ------------------- |
+| **S (Sure-fire)**        | 単発コマンド／1 リソースだけ            | Q1, Q2, Q6, Q3      | **即着手**             |
+| **M (Medium)**           | テンプレ書いて貼り替え                | Q10, Q12, Q14, Q17  | **後でまとめて**          |
+| **L (Long / Low value)** | ロールバック調査・ノード操作・Helm・Docker | Q4, Q8, Q11, Q33-35 | **原則捨て**（最後に時間があれば） |
+
+*左ペインの旗アイコンをクリックしながら* S, M, L を可視化。
+メモパッド先頭に `S:` `M:` `L:` と列挙すると迷わない。
+
+---
+
+### ❷ S 問（即解ける）を 20–25 分で一気に潰す
+
+1. **名前空間一覧ファイル**（Q1）
+
+   ```bash
+   k get ns -o name > ~/namespaces        # 打鍵 5 秒
+   ```
+2. **Pod/Job テンプレ**（Q2, Q3, Q6）
+
+   * `k run … $do > x.yaml` → probe/labelだけ挿入 → apply
+   * 覚えたコピペで “考える時間ゼロ”
+
+**✔️ 目標：ここまでで 6〜8 題、正答率 100 %**
+
+---
+
+### ❸ M 問は「雛形 1 枚 → 3 問まとめ書き」で時短
+
+| 作業ブロック (例)                   | コツ                                             | 想定時間   |
+| ---------------------------- | ---------------------------------------------- | ------ |
+| Q10 & Q18 **Service/Patch系** | 同じ `kubectl edit`/`patch` パターン                 | 10 min |
+| Q12 & Q13 **PV/PVC系**        | 先に PV 作成→PVC で copy-paste                      | 8 min  |
+| Q14 **Secret/ConfigMap系**    | `k create secret generic … --from-literal=`    | 3 min  |
+| Q16 **サイドカー追加**              | 既存 YAML に `containers: - name: logger-con` を追記 | 4 min  |
+| Q17 **InitContainer**        | `spec.initContainers` 雛形をコピペ                   | 3 min  |
+
+メモパッドに以下フォーマットを置き、番号を変えるだけにする：
+
+```yaml
+readinessProbe:
+  exec:
+    command: ["cat","/tmp/ready"]
+  initialDelaySeconds: 5
+  periodSeconds: 10
+```
+
+---
+
+### ❹ 残り時間をチェック
+
+| 状況              | 戦術                                                       |              |
+| --------------- | -------------------------------------------------------- | ------------ |
+| **> 20 min 残**  | L 問から “最短で終わる” ものを 1〜2 題だけ挑戦（NodePort 変更、ラベル一括 patch など） |              |
+| **10–20 min 残** | S/M 問の YAML フィールド typo 検索：\`k get events -A              | grep Error\` |
+| **< 10 min**    | フラグ付き未回答を “適当に apply だけ” して何かしらのオブジェクトを作成＝部分点狙い          |              |
+
+---
+
+### ❺ 2 分残しで全ファイル＆状態チェック
+
+```bash
+# 全リソース ready？
+k get pod -A
+
+# 指定ファイル存在？
+ls -l ~/dev/k8s-ckad/wsl/test | grep -E 'namespaces|service_test'
+```
+
+---
+
+## よくある落とし穴 → 先にメモ
+
+| 落とし穴                                       | 回避メモ (メモパッドに貼る)                |
+| ------------------------------------------ | ------------------------------ |
+| `restartPolicy` を Job で忘れ `Never` 以外にすると失格 | `Job/CJは restartPolicy: Never` |
+| Probe `command:` 配列忘れ                      | `- cat` `- /tmp/ready` の 2 行   |
+| Service `targetPort` タイポ                   | `port`=外部, `targetPort`=Pod    |
+| NodePort 範囲外 (30100 OK)                    | 30000–32767                    |
+| `storageClassName: ""` を欠くと Bound しない      | 明示的に空文字                        |
+
+---
+
+### 暗記するテンプレ YAML 5 本
+
+1. **Pod** (Probe/command 差し込み)
+2. **Deployment** (replicas, securityContext)
+3. **Job / CronJob** (completions / schedule)
+4. **PVC + PV** (hostPath, retain)
+5. **NetworkPolicy egress only**
+
+> ファイル名を `tmpl-pod.yaml` などにしてローカルに置き、
+> `cp tmpl-pod.yaml pod6.yaml && sed -i 's/NAME/pod6/' pod6.yaml` の手もあり
+> （Killer.sh・本番ともローカルファイル自由）。
+
+---
+
+## まとめ
+
+* **開始 5 分で triage → S/M/L フラグ分け**
+* **S を 25 min、M を 35 min** で片付けて 60 min で 70 % 到達。
+* **残り時間は typo 修正 or おまけ挑戦**
+* **Docker/Helm/NodeAffinity などは最初から捨て問**—時間対効果ゼロ。
+
+これが “合格ライン確保だけに全振り” する CKAD 当日の動き方です。
+丸暗記＋フラグ活用で **「解くべき問題」だけ確実に拾いましょう！**
+
+
 ---
 
 ## ✅ ブロック一覧と学習順序の目安
