@@ -324,36 +324,7 @@ metadata:
 
 
 
-====================================
-Q4
 
-目標時間 7分
-
-Question 4:
-Solve this question on instance: ssh ckad7326
-
-Mercury チームから **Namespace `mercury`** 内で Helm を使って次の作業を依頼されています。
-
-1. **`internal-issue-report-apiv1`** というリリースを削除する
-2. **`internal-issue-report-apiv2`** リリースを、利用可能な **`bitnami/nginx`** チャートの新しいバージョンへアップグレードする
-3. **`helm `** チャートを用いて、新しいリリース **`internal-issue-report-apache`** をインストールする
-
-   * その際、Helm の values で **Deployment のレプリカ数を 2** に設定する
-4. **`pending-install` 状態で止まっている壊れたリリース** があるので、特定して削除する
-
-
-kubectl apply -f q4.yaml
-
-# q4.yaml
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: mercury
-====================================
-
- helm uninstall internal-issue-report-apiv1
- helm upgrade internal-issue-report-apiv2
- helm install internal-issue-report-apache bitnami/apache --set replicaCount=2
 
 ====================================
 Q5
@@ -607,40 +578,7 @@ spec:
 
 
 
-====================================
-Q11 後回し中 Docker周りのtest準備対策は後回し中
 
-目標時間 10分
-
-Question 11:
-Solve this question on instance: ssh ckad9043
-
-あなたが月例ミーティングで披露した **コンテナ技術の知見** を、Sun 部門の Build\&Release チームが必要としています。
-イメージをビルドするためのファイルは **`/11/image`** に置かれており、
-コンテナでは **標準出力に情報を出す Go アプリケーション** が動きます。
-以下の作業を行ってください。
-
-> **注意**
-> すべてのコマンドはユーザ **`candidate`** で実行してください。
-> Docker を使うときは **`sudo docker`** を忘れずに。
-
-1. **Dockerfile** を修正し、環境変数 **`SUN_CIPHER_ID`** の値を
-   **`5b9c1065-e39d-4a43-a04a-e59bcea3e03f`** にハードコードする。
-2. **Docker** でイメージをビルドし、
-   リポジトリ **`registry.killer.sh:5000/sun-cipher`** に
-   **`latest`** と **`v1-docker`** の 2 つのタグを付けてプッシュする。
-3. **Podman** でも同じイメージをビルドし、
-   タグ **`v1-podman`** を付けて同リポジトリにプッシュする。
-4. **Podman** を使い、バックグラウンドで動くコンテナ **`sun-cipher`** を起動する。
-   画像は **`registry.killer.sh:5000/sun-cipher:v1-podman`**。
-   実行ユーザは **`candidate@ckad9043`** であり、**`root@ckad9043`** ではないこと。
-5. そのコンテナ **`sun-cipher`** のログを **`/11/logs`** に書き出す。
-   さらに、Podman で稼働中のコンテナ一覧を **`/11/containers`** に保存する。
-
-
-
-====================================
-dockerは後回し
 
 
 

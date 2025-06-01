@@ -194,46 +194,11 @@ metadata:
 
 ---
 
-## Q33 Affinity / Taints & Priority ─「cosmo-worker」
 
-```yaml
-# q33-namespace.yaml
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: cosmo
-```
-
-<details><summary>① 問題文</summary>
-
-* PriorityClass `cosmo-high` value 100000
-* Deployment `cosmo-worker` (busybox, replicas 3)
-
-  * preferred zone=us-east, fallback us-west
-  * nodeSelector `kubernetes.io/arch=amd64`
-  * toleration for taint `dedicated=batch:NoSchedule`
-
-</details>
 
 ---
 
-## Q34 StorageClass & Volume Expansion ―「terra-store」
 
-```yaml
-# q34-namespace.yaml
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: terra
-```
-
-<details><summary>① 問題文</summary>
-
-* StorageClass `terra-gold`（allowVolumeExpansion: true）を新規作成
-* PVC `terra-pvc` 1 Gi→Pod `terra-app` (nginx) にマウント
-* 実行後に PVC を 3 Gi へ拡張し、Pod 内 `df -h` でサイズ増加を確認
-
-</details>
 
 ---
 

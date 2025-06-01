@@ -18,9 +18,6 @@
 | **Q30** | ◯  | Canary Rollout 25 % — *「nova-frontend」*                   |
 | **Q31** | △  | Multi-Container (Ambassador) + PDB — *「starlight-api」*    |
 | **Q32** | △  | `kubectl auth can-i` 権限制御 — *「galaxy-viewer」*             |
-| **Q33** | ▽  | Taints & Tolerations + Anti-Affinity — *「orbit-batch」*    |
-| **Q34** | ▽  | PriorityClass + NodeAffinity — *「cosmo-worker」*           |
-| **Q35** | ▼  | StorageClass 作成 + PVC 拡張 — *「terra-store」*                |
 
 > ◎：ほぼ毎回 ◯：高頻度 △：中頻度 ▽：たまに ▼：ほぼ出ない
 
@@ -105,14 +102,6 @@
 
 ---
 
-## Q33 Taints & Tolerations + Anti-Affinity — 「orbit-batch」
-
-* スタータ YAML：`Q33-taints-tolerations/namespace.yaml`
-* 目標：`dedicated=batch:NoSchedule` taint を許容する 3 Pod。
-  同一ノードに最大 2 Pod（hostname Anti-Affinity）。
-
----
-
 ## Q34 PriorityClass + NodeAffinity — 「cosmo-worker」
 
 * スタータ YAML：`Q34-priority-affinity/namespace.yaml`
@@ -121,13 +110,6 @@
   かつ `kubernetes.io/arch=amd64` 選択。
 
 ---
-
-## Q35 StorageClass + PVC Expansion — 「terra-store」
-
-* スタータ YAML：`Q35-storageclass-expand/namespace.yaml`
-* 目標：SC `terra-gold` (`allowVolumeExpansion:true`)。
-  PVC 1 Gi → 3 Gi 拡張を Pod 内 `df -h` で確認。
-
 ---
 
 ### 備考
