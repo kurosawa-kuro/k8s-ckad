@@ -7,6 +7,8 @@ cd ~/dev/k8s-ckad/wsl/test
 ====================================
 Q6
 
+目標時間 4分
+
 Question 6:
 Solve this question on instance: ssh ckad5601
 
@@ -33,6 +35,8 @@ Pod を作成し、正常に起動したことを確認してください。
 ====================================
 Q10
 
+目標時間 7分
+
 Question 10:
 Solve this question on instance: ssh ckad9043
 
@@ -55,6 +59,8 @@ Pluto チームはクラスタ内部用の新しい Service を必要として�
 
 ====================================
 Q18
+
+目標時間 4分
 
 Question 18:
 Solve this question on instance: ssh ckad5601
@@ -139,6 +145,8 @@ kubectl exec -n mars curl-test -- curl -s --max-time 3 manager-api-svc.mars:4444
 ====================================
 Q9
 
+目標時間 6分
+
 Question 9:
 Solve this question on instance: ssh ckad9043
 
@@ -183,6 +191,8 @@ spec:
 
 ====================================
 Q14
+
+目標時間 6分
 
 Question 14:
 Solve this question on instance: ssh ckad9043
@@ -238,6 +248,8 @@ stringData:
 ====================================
 Q1
 
+目標時間 2分
+
 DevOps チームは、クラスタ内に存在する **すべての Namespace の一覧を取得** したいと考えています。
 その一覧を取得し、`~/dev/k8s-ckad/wsl/test/namespaces` というファイルに保存してください。
 ====================================
@@ -247,6 +259,8 @@ DevOps チームは、クラスタ内に存在する **すべての Namespace �
 
 ====================================
 Q2
+
+目標時間 4分
 
 Question 2:
 Solve this question on instance: ssh ckad5601
@@ -269,6 +283,8 @@ Solve this question on instance: ssh ckad5601
 
 ====================================
 Q3
+
+目標時間 6分
 
 Question 3:
 Solve this question on instance: ssh ckad7326
@@ -300,6 +316,8 @@ metadata:
 ====================================
 Q4
 
+目標時間 7分
+
 Question 4:
 Solve this question on instance: ssh ckad7326
 
@@ -328,6 +346,8 @@ metadata:
 
 ====================================
 Q5
+
+目標時間 5分
 
 Question 5:
 Solve this question on instance: ssh ckad7326
@@ -377,6 +397,8 @@ type: kubernetes.io/service-account-token
 
 ====================================
 Q7 問題再現が難しいので後回し
+
+目標時間 5分
 
 Question 7:
 Solve this question on instance: ssh ckad7326
@@ -500,6 +522,8 @@ spec:
 ====================================
 Q8 問題再現が難しいので後回し
 
+目標時間 7分
+
 Question 8:
 Solve this question on instance: ssh ckad7326
 
@@ -575,6 +599,8 @@ spec:
 ====================================
 Q11 後回し中 Docker周りのtest準備対策は後回し中
 
+目標時間 10分
+
 Question 11:
 Solve this question on instance: ssh ckad9043
 
@@ -610,6 +636,8 @@ dockerは後回し
 
 ====================================
 Q12
+
+目標時間 7分
 
 Question 12:
 Solve this question on instance: ssh ckad5601
@@ -707,6 +735,8 @@ spec:
 ====================================
 Q13
 
+目標時間 5分
+
 Question 13:
 Solve this question on instance: ssh ckad9043
 
@@ -774,6 +804,8 @@ spec:
 ====================================
 Q15
 
+目標時間 4分
+
 Question 15:
 Solve this question on instance: ssh ckad9043
 
@@ -833,6 +865,8 @@ spec:
 
 ====================================
 Q16
+
+目標時間 7分
 
 Question 16:
 Solve this question on instance: ssh ckad7326
@@ -902,6 +936,8 @@ spec:
 ====================================
 Q17
 
+目標時間 5分
+
 Question 17:
 Solve this question on instance: ssh ckad5601
 
@@ -969,6 +1005,8 @@ spec:
 ====================================
 Q19
 
+目標時間 6分
+
 Question 19:
 Solve this question on instance: ssh ckad5601
 
@@ -1035,6 +1073,8 @@ spec:
 
 ====================================
 Q20
+
+目標時間 8分
 
 Question 20:
 Solve this question on instance: ssh ckad7326
@@ -1112,6 +1152,9 @@ spec:
 
 ====================================
 Question 21:
+
+目標時間 4分
+
 Solve this question on instance: ssh ckad7326
 
 Neptune チームでは、以下の要件で Deployment を作成してください。
@@ -1147,6 +1190,9 @@ metadata:
 
 ====================================
 Question 22:
+
+目標時間 3分
+
 Solve this question on instance: ssh ckad9043
 
 Sun チーム（Namespace **`sun`**）では、特定の Pod を識別したいと考えています。
