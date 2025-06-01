@@ -1,8 +1,8 @@
 cd ~/dev/k8s-ckad/wsl/test
-./-setup.sh
+./setup/-setup.sh
 
 cd ~/dev/k8s-ckad/wsl/test
-./-setup-alias.sh
+./setup/-setup-alias.sh
 
 ====================================
 Q6
