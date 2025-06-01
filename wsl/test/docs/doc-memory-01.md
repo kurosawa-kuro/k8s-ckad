@@ -2,12 +2,81 @@
 
 **Killer Shell、KodeKloud、GitHub の練習リポジトリなど対応**
 
+### 「これ、CKAD 本番より難しくない？」への回答
+
+―― **実際に採点対象になる“コア部分”** と **出てもボーナス要素** を切り分けます。
+
+| 問題                             | **CKAD 本番で必須の範囲**                                                                                                     | 　出てもおかしくないが “ボーナス” / 模試が盛っている箇所                                                                |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| **Q25 Probes + Downward**      | - livenessProbe または readinessProbe を `/healthz` で付ける<br>- Downward API で `metadata.name` / `spec.nodeName` を env に入れる | - **startupProbe**（CKAD 公式範囲外だが時折出題）<br>- **Ephemeral Container で検証**（debug コマンドは便利だが採点対象外）    |
+| **Q26 RBAC + ImagePullSecret** | - `ServiceAccount` を作り Role/RoleBinding で **pods/exec・pods/log** を許可                                                  | - **Secret type dockerconfigjson** を自作して `imagePullSecrets` に紐付け（本番は “既存 Secret を SA に付けろ” 程度） |
+
+つまり **CKAD 本試験の採点ロジックは** ↓ **赤字部分だけ** を見ています。
+
+```yaml
+# Q25 最小 CKAD 合格ライン
+containers:
+- name: main
+  image: busybox
+  # ★ livenessProbe （readiness でも可）
+  livenessProbe:
+    httpGet: {path: /healthz, port: 8080}
+    initialDelaySeconds: 5
+  # ★ Downward env
+  env:
+  - name: POD_NAME
+    valueFrom: {fieldRef: {fieldPath: metadata.name}}
+  - name: NODE_NAME
+    valueFrom: {fieldRef: {fieldPath: spec.nodeName}}
+```
+
+```yaml
+# Q26 最小 CKAD 合格ライン
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: deep-sa
+  namespace: deep-reader
+---
+kind: Role
+rules:                          # ★ pods/log と pods/exec だけ
+- apiGroups: [""]
+  resources: ["pods/log","pods/exec"]
+  verbs: ["get","watch","list","create"]
+---
+kind: RoleBinding
+subjects:
+- kind: ServiceAccount
+  name: deep-sa
+roleRef:
+  kind: Role
+  name: deep-reader-role
+  apiGroup: rbac.authorization.k8s.io
+```
+
+> * **imagePullSecrets** は “レジストリが私的” な環境でのみ必要。
+> * **startupProbe / debug** は点数対象外だが、模試が *実務力* 用に追加しているだけ。
+
+---
+
+## どう取り組むか
+
+1. **まず上の“赤枠”だけ 2 〜 3 分で書けるように練習**
+2. 時間が余ったら `startupProbe` や `imagePullSecrets` を足して満点化
+3. 本番では YAML の行数が短ければ **それだけタイピング量が減り、見直しも速い** です
+
+> **要は「盛られている部分を見抜いて切り捨てる」のも CKAD の戦術。**
+> Q25/Q26 も、実際に合格点を稼ぐのはシンプルな 5–10 行だけ、と思ってください。
+
+
 > **目的**: CKAD 本試験 (20 問・120 分) を想定し、**タイムロス最小化** のために必要十分なコマンドと TIPS を 1 シートに凝縮しました。重複していた説明・コマンドを統合し、見出し階層を整理しています。
 
 おっしゃるとおり **“Workloads（Pod／Deployment／ReplicaSet…）が最前線”** で、
 Probe・PVC・NetPol・Job は **その次のレイヤ** という整理のほうが実態に合います。
 先ほどの「主戦４テーマ」は *「Workload が出来ている前提で＋α」* を意図していましたが、
 優先度を改めて 3 階層でまとめ直します。
+
+
 
 ---
 
