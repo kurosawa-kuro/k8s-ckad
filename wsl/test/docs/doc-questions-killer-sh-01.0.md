@@ -42,6 +42,61 @@ Pod を作成し、正常に起動したことを確認してください。
 
 ====================================
 
+====================================
+Q14
+
+目標時間 6分
+
+Question 14:
+Solve this question on instance: ssh ckad9043
+
+課題: Namespace moon にある Pod secret-handler の定義を修正してください。
+
+Secret secret1 を Namespace moon に新規作成し、下記キーを含めること。
+
+user=test
+pass=pwd
+
+Pod では次の環境変数として参照できるようにすること。
+
+SECRET1_USER → user
+SECRET1_PASS → pass
+
+/14/secret2.yaml にある YAML を適用して Secret secret2 を作成し、
+Pod 内の /tmp/secret2 にマウントすること。
+
+基本 YAML (/14/secret-handler.yaml) を編集し、
+変更後のファイルを /14/secret-handler-new.yaml として保存すること。
+
+両方の Secret は Namespace moon でのみ利用できるようにしてください。
+
+
+# ./14/secret-handler-new.yaml  ← apply しない
+apiVersion: v1
+kind: Pod
+metadata:
+  name: secret-handler
+  namespace: moon
+  labels:
+    app: secret-handler
+spec:
+  containers:
+    - name: secret-handler
+      image: busybox          # 元のイメージに置き換えて可
+      command: ["sleep", "3600"]
+
+# ./14/secret2.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: secret2
+  namespace: moon
+type: Opaque
+stringData:
+  config: |
+    key=moon
+    region=space
+
 
 ====================================
 Q10
@@ -200,61 +255,7 @@ spec:
 ====================================
 
 
-====================================
-Q14
 
-目標時間 6分
-
-Question 14:
-Solve this question on instance: ssh ckad9043
-
-課題: Namespace moon にある Pod secret-handler の定義を修正してください。
-
-Secret secret1 を Namespace moon に新規作成し、下記キーを含めること。
-
-user=test
-pass=pwd
-
-Pod では次の環境変数として参照できるようにすること。
-
-SECRET1_USER → user
-SECRET1_PASS → pass
-
-/14/secret2.yaml にある YAML を適用して Secret secret2 を作成し、
-Pod 内の /tmp/secret2 にマウントすること。
-
-基本 YAML (/14/secret-handler.yaml) を編集し、
-変更後のファイルを /14/secret-handler-new.yaml として保存すること。
-
-両方の Secret は Namespace moon でのみ利用できるようにしてください。
-
-
-# /opt/course/14/secret-handler.yaml  ← apply しない
-apiVersion: v1
-kind: Pod
-metadata:
-  name: secret-handler
-  namespace: moon
-  labels:
-    app: secret-handler
-spec:
-  containers:
-    - name: secret-handler
-      image: busybox          # 元のイメージに置き換えて可
-      command: ["sleep", "3600"]
-  # ↓ ここから下は空。受験者が env / volume を追記して完成させる
-
-# /opt/course/14/secret2.yaml
-apiVersion: v1
-kind: Secret
-metadata:
-  name: secret2
-  namespace: moon
-type: Opaque
-stringData:
-  config: |
-    key=moon
-    region=space
     
 ====================================
 Q1
