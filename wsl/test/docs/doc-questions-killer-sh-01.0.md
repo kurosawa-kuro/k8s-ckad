@@ -142,7 +142,7 @@ Namespace **`mars`** にある **ClusterIP Service `manager-api-svc`** が、
 2. **設定ミスを調べて修正** し、Service 経由で Pod にアクセスできる状態にしてください。
 
 
-kubectl apply -f q18-01.yaml,q18-02.yaml,q18-03.yaml,q18-04.yaml
+kubectl apply -f ./question_yaml/q18-01.yaml,./question_yaml/q18-02.yaml,./question_yaml/q18-03.yaml,./question_yaml/q18-04.yaml
 
 # q18-01.yaml
 apiVersion: v1
@@ -186,8 +186,8 @@ spec:
     app: manager-api
   ports:
     - name: http
-      port: 4444          # ← クライアントがアクセスするポート
-      targetPort: 8888    # ← ★ Pod 側のポートと“ズレている”ため通信できない
+      port: 4444
+      targetPort: 8888
       protocol: TCP
 
 # q18-04.yaml
@@ -230,7 +230,7 @@ Namespace **`pluto`** には、現在 **`holy-api`** という Pod が 1 つだ�
 4. 作成した Deployment の YAML を **`holy-api-pod.yaml`** に保存してください。
 
 
-kubectl apply -f q9-01.yaml,q9-02.yaml
+kubectl apply -f ./question_yaml/q9-01.yaml,./question_yaml/q9-02.yaml
 
 # q9-01.yaml
 apiVersion: v1
@@ -314,7 +314,7 @@ Solve this question on instance: ssh ckad7326
 Job を起動し、履歴を確認できるようにしてください。
 
 
-kubectl apply -f q3-01.yaml
+kubectl apply -f ./question_yaml/q3-01.yaml
 
 # q3-01.yaml
 apiVersion: v1
@@ -342,7 +342,7 @@ Neptune チームは、**Namespace `neptune`** に **`neptune-sa-v2`** という
 というファイルに書き込んでください。
 
 
-kubectl apply -f q5.yaml
+kubectl apply -f ./question_yaml/q5.yaml
 
 # q5.yaml
 apiVersion: v1
@@ -396,7 +396,7 @@ Neptune チームの経営陣は、Saturn チームが運用していた **e コ
      （顧客はほぼいないはずなので影響はありません）
 
 
-kubectl apply -f q7-01.yaml,q7-02.yaml
+kubectl apply -f ./question_yaml/q7-01.yaml,./question_yaml/q7-02.yaml
 
 # q7-01.yaml
 apiVersion: v1
@@ -517,7 +517,7 @@ Namespace **`neptune`** には **`api-new-c32`** という Deployment が既に�
 2. なぜ更新版が立ち上がらなかったのか、**エラーの原因**を調べて Team Neptune に報告してください。
 
 
-kubectl apply -f q8-01.yaml,q8-02.yaml,q8-03.yaml
+kubectl apply -f ./question_yaml/q8-01.yaml,./question_yaml/q8-02.yaml,./question_yaml/q8-03.yaml
 
 # q8-01.yaml
 apiVersion: v1
@@ -617,69 +617,6 @@ Solve this question on instance: ssh ckad5601
 
 ====================================
 
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: earth-project-earthflower-pv
-spec:
-  capacity:
-    storage: 2Gi
-  volumeMode: Filesystem
-  accessModes:
-    - ReadWriteOnce
-  persistentVolumeReclaimPolicy: Retain   
-  storageClassName: ""
-  hostPath:
-    path: /Volumes/Data
-
-
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: earth-project-earthflower-pvc
-  namespace: earth
-spec:
-  accessModes:
-    - ReadWriteOnce
-  volumeMode: Filesystem
-  resources:
-    requests:
-      storage: 2Gi
-  storageClassName: ""
-
-
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  creationTimestamp: null
-  labels:
-    app: project-earthflower
-  name: project-earthflower
-  namespace: earth
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: project-earthflower
-  strategy: {}
-  template:
-    metadata:
-      creationTimestamp: null
-      labels:
-        app: project-earthflower
-    spec:
-      containers:
-      - image: httpd:2.4.41-alpine
-        name: httpd
-        resources: {}
-        volumeMounts:
-        - name: vol
-          mountPath: /tmp/project-data
-      volumes:
-        - name: vol
-          persistentVolumeClaim:
-            claimName: earth-project-earthflower-pvc
-
 
 
 ====================================
@@ -710,7 +647,7 @@ Moonpie チーム（Namespace **`moon`**）で追加ストレージが必要に�
    **`/13/pvc-126-reason`**（ckad9043 ノード）というファイルに書き込んでください。
 
 
-kubectl apply -f q13.yaml
+kubectl apply -f ./question_yaml/q13.yaml
 
 # q13.yaml
 apiVersion: v1
@@ -773,7 +710,7 @@ Moonpie チーム（Namespace **`moon`**）には **`web-moon`** という nginx
      ページが正しく返ることを確認してください。
 
 
-kubectl apply -f q15.yaml
+kubectl apply -f ./question_yaml/q15.yaml
 
 # q15.yaml
 apiVersion: apps/v1
@@ -843,7 +780,7 @@ Mercury2D のテックリードは、たび重なる “データ欠落インシ
   **データ欠落インシデントに関する手掛かりが出力されていないか** チェックしてください。
 
 
-kubectl apply -f q16.yaml
+kubectl apply -f ./question_yaml/q16.yaml
 
 # q16.yaml
 apiVersion: apps/v1
@@ -911,7 +848,7 @@ Solve this question on instance: ssh ckad5601
    `index.html` が返ってくることを確認してください。
 
 
-kubectl apply -f q17.yaml
+kubectl apply -f ./question_yaml/q17.yaml
 
 # q17.yaml
 apiVersion: apps/v1
@@ -969,7 +906,7 @@ Namespace **`jupiter`** には、レプリカ数 1 の Apache Deployment **`jupi
 * **Pod はどのノードで稼働していましたか？**
 
 
-kubectl apply -f q19-01.yaml,q19-02.yaml,q19-03.yaml
+kubectl apply -f ./question_yaml/q19-01.yaml,./question_yaml/q19-02.yaml,./question_yaml/q19-03.yaml
 
 # q19-01.yaml
 apiVersion: v1
@@ -1041,7 +978,7 @@ Namespace **`venus`** には **`api`** と **`frontend`** の 2 つの Deploymen
 * `wget api:2222`
 
 
-kubectl apply -f q20-01.yaml,q20-02.yaml,q20-03.yaml,q20-04.yaml
+kubectl apply -f ./question_yaml/q20-01.yaml,./question_yaml/q20-02.yaml,./question_yaml/q20-03.yaml,./question_yaml/q20-04.yaml
 
 # q20-01.yaml
 apiVersion: v1
@@ -1121,7 +1058,7 @@ Neptune チームでは、以下の要件で Deployment を作成してくださ
 * **ServiceAccount**: `neptune-sa-v2`（この ServiceAccount で Pod を実行すること）
 
 
-kubectl apply -f q21.yaml
+kubectl apply -f ./question_yaml/q21.yaml
 
 # q21.yaml
 apiVersion: v1
