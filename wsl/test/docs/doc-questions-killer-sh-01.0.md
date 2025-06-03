@@ -569,21 +569,6 @@ spec:
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 ====================================
 Q12
 
@@ -701,7 +686,7 @@ Moonpie チーム（Namespace **`moon`**）には **`web-moon`** という nginx
 
 1. **ConfigMap `configmap-web-moon-html`** を作成する
 
-   * ファイル **`/15/web-moon.html`** の内容を
+   * ファイル **`./15/web-moon.html`** の内容を
      `data` セクションの **キー名 `index.html`** に入れる
 
 2. Deployment **`web-moon`** は、この ConfigMap を読み込んで HTML を配信するように設定済みです。

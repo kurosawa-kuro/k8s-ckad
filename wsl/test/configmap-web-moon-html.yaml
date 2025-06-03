@@ -1,0 +1,9 @@
+apiVersion: v1
+data:
+  web-moon.html: |-
+    <h1>Hello Moon</h1>
+    <p>Deployed via ConfigMap.</p>
+kind: ConfigMap
+metadata:
+  creationTimestamp: null
+  name: configmap-web-moon-html
