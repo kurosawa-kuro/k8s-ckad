@@ -329,12 +329,13 @@ resource-management名前空間に設定された最大cpu制約の半分を、�
 環境準備
 
 1. wgetコマンドを使用して、次のURLからyamlファイルをダウンロードして下さい。
+2. 次のコマンドを実行して、問題に必要なリソースを作成して下さい。
 
 wget https://raw.githubusercontent.com/nz-cloud-udemy/ckad-questions/main/practice-questions/9/logger.yaml
 
 
 
-2. 次のコマンドを実行して、問題に必要なリソースを作成して下さい。
+
 
 kubectl apply -f https://raw.githubusercontent.com/nz-cloud-udemy/ckad-questions/main/practice-questions/9/resources.yaml
 
@@ -354,7 +355,7 @@ Podにfluent/fluentd:edgeイメージを使用したコンテナを追加し、/
 
 loggerコンテナと共有するボリュームを/tmp/logディレクトリにマウントして下さい。
 
-/fluentd/etcディレクトリにfluentd-configmapをマウントして下さい。
+/fluentd/etcディレクトリにfluentd-configをマウントして下さい。
 
 ---------------------------------------------------------
 
