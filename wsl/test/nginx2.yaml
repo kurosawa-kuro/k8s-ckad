@@ -10,7 +10,7 @@ spec:
   - image: busybox  # 軽量なイメージを使用
     name: nginx2
     resources: {}
-    command: ["/bin/sh", "-c", "echo Hello; echo Hello2"]
+    command: ["/bin/sh","-c", "while true; do echo hello4; sleep 10;done"]
   dnsPolicy: ClusterFirst
   restartPolicy: Never  # 修正: 再起動しないように設定
 status: {}
