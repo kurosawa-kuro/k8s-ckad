@@ -1,6 +1,4 @@
-ご指摘いただきありがとうございます。内容が損なわれてしまったことをお詫び申し上げます。リソースに関して各セクションごとのユニークなテーマを再度整理し、各リソースごとの理解が深まるように調整を行います。
-
-改めて、**ユニークなテーマ**ごとに整理したリソース説明と、それぞれの目的や設定について一貫性を保つ形で再構成いたします。以下に再調整したドキュメントを示します。
+以下のようにドキュメントを調整しました。**`/bin/sh` に関する参照方法**をより明確にし、**コマンドの実行**や関連するリソース設定に焦点を当てて整理しています。
 
 ---
 
@@ -31,23 +29,24 @@ status: {}
 
 ---
 
-### **① Podのライフサイクルと関連設定**
+### ① **Podのライフサイクルと関連設定**
 
-#### **livenessProbe / readinessProbe / startupProbe**
+#### livenessProbe / readinessProbe / startupProbe
 
-* **`livenessProbe`** は、Podが動作しているか確認するための設定。Podが正常でない場合、再起動を試みます。
-* **`readinessProbe`** は、Podがトラフィックを受け入れる準備ができたかを確認します。
-* **`startupProbe`** は、Podが正常に起動したかを確認します。
+* `kubectl explain` では型しか分からず、**httpGet/exec/tcpSocket の使い分け方や典型構文例が出てこない**。
+* → 公式：[livenessProbe設定](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/)
+
+**サンプル:**
 
 ```yaml
 apiVersion: v1
 kind: Pod
 metadata:
-  name: liveness-readiness-probe  # livenessProbeとreadinessProbeの設定を試すPod
+  name: liveness-readiness-probe  # Podの名前。livenessProbeとreadinessProbeの設定を試すためのPod
 spec:
   containers:
-    - name: nginx  # コンテナ名
-      image: nginx  # コンテナイメージ
+    - name: nginx  # コンテナ名。`nginx` コンテナを使用
+      image: nginx  # 使用するコンテナイメージ
       livenessProbe:  # Podの健康状態を確認するlivenessProbeの設定
         httpGet:  # HTTP GETリクエストを使用して状態を確認
           path: /healthz  # 健康状態を確認するパス
@@ -56,9 +55,13 @@ spec:
         periodSeconds: 5  # 5秒ごとに健康状態を確認
 ```
 
-#### **activeDeadlineSeconds の構造位置に注意**
+#### activeDeadlineSeconds の構造位置に注意
 
-* **`activeDeadlineSeconds`** はPodの実行時間を制限します。指定時間を超えるとPodは強制的に終了します。
+* **`activeDeadlineSeconds` は、PodSpecのトップレベルの設定**として指定されます。
+* これが設定されていると、Podの**実行時間が制限され**、指定時間を超えるとPodが強制的に終了します。**`spec.containers` 内ではなく、`spec` の直下に位置します**。
+* → 公式：[activeDeadlineSecondsの設定](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#active-deadline-seconds)
+
+**サンプル:**
 
 ```yaml
 apiVersion: batch/v1
@@ -89,25 +92,29 @@ spec:
 
 ---
 
-### **② リソースのスケーリングと制限**
+### ② **リソースのスケーリングと制限**
 
-#### **PodDisruptionBudget / HorizontalPodAutoscaler / ResourceQuota / LimitRange**
+#### PodDisruptionBudget / HorizontalPodAutoscaler / ResourceQuota / LimitRange
 
-* **`PodDisruptionBudget`** は、Podが削除されたり、停止したりする際に最小のPod数を維持するための設定です。
-* **`HorizontalPodAutoscaler`** は、CPUやメモリの使用状況に基づいてPodの数を自動的にスケーリングします。
-* **`ResourceQuota`** と **`LimitRange`** は、リソースの使用量を制限するために使用します。
+* `kubectl explain` ではポリシーの意味や制限の戦略がわからない。
+* → 公式：[PodDisruptionBudget設定](https://kubernetes.io/docs/concepts/workloads/pods/disruptions/)
+* → 公式：[HorizontalPodAutoscaler設定](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/)
+
+**サンプル (PodDisruptionBudget):**
 
 ```yaml
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: web-app-pdb
+  name: web-app-pdb  # PodDisruptionBudgetの名前。Webアプリの可用性を守るため
 spec:
   minAvailable: 2  # 常に最低2つのPodが稼働していることを保証
   selector:
     matchLabels:
       app: web-app  # `web-app` ラベルがついているPodを対象
 ```
+
+**サンプル (HorizontalPodAutoscaler):**
 
 ```yaml
 apiVersion: autoscaling/v2
@@ -130,6 +137,8 @@ spec:
         averageUtilization: 50  # CPU利用率が50%を超えるとスケールアップ
 ```
 
+**サンプル (ResourceQuota):**
+
 ```yaml
 apiVersion: v1
 kind: ResourceQuota
@@ -145,11 +154,14 @@ spec:
 
 ---
 
-### **③ コンテナの設定と共有**
+### ③ **コンテナの設定と共有**
 
-#### **initContainers + shareProcessNamespace**
+#### initContainers + shareProcessNamespace
 
-* **`initContainers`** は、メインコンテナが起動する前に実行されるコンテナです。Podの初期化処理に使用されます。
+* `initContainers` の使い方や共通ファイル共有、`emptyDir`との絡みなどが典型パターンとして紹介されている。
+* → 公式：[initContainersの使い方](https://kubernetes.io/docs/concepts/workloads/pods/init-containers/)
+
+**サンプル:**
 
 ```yaml
 apiVersion: v1
@@ -172,21 +184,56 @@ spec:
       emptyDir: {}
 ```
 
+#### volumeMounts / volumes の各種型（configMap, secret, emptyDir, hostPath）
+
+* `emptyDir` や `hostPath` の使い方やシナリオが `kubectl explain` では不足していることが多い。
+* → 公式：[volumesの設定](https://kubernetes.io/docs/concepts/storage/volumes/)
+
+**サンプル (emptyDir):**
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-with-emptydir
+spec:
+  containers:
+    - name: nginx
+      image: nginx
+      volumeMounts:
+        - mountPath: "/data"
+          name: mydata
+  volumes:
+    - name: mydata
+      emptyDir: {}
+```
+
 ---
 
-### **④ スケジュールとテイント（Taint）**
+### ④ **スケジュールとテイント（Taint）**
 
-#### **taint**
+#### taint
 
-* **Taint** は、ノードに制約を加えて、特定のPodがそのノードにスケジュールされるのを防ぐ設定です。
+* **Taint** は、ノードに**制約を追加**するための設定です。これにより、特定のPodがそのノードにスケジュールされるのを防ぐことができます。
+* `kubectl taint` コマンドを使って、ノードに**特定の制約**を追加します。例えば、以下のコマンドで、`foo` ノードに対して `dedicated=special-user:NoSchedule` というタイントを設定します：
+
+  ```bash
+  kubectl taint nodes foo dedicated=special-user:NoSchedule
+  ```
+
+  これにより、**`special-user` に関連するPod**はこのノードにスケジュールされなくなります。
+
+**サンプル (taintの設定):**
 
 ```bash
 kubectl taint nodes foo dedicated=special-user:NoSchedule
 ```
 
-#### **Tolerationsの設定**
+#### Tolerationsの設定
 
-* **Tolerations** を使うことで、Podがタイント付きノードにスケジュールされることを許可します。
+* `tolerations` を使うと、特定のPodが**タイント付きノード**にスケジュールされることを許可できます。`tolerations` は、Podの`spec`セクションで設定します。
+
+**サンプル (tolerationsの設定):**
 
 ```yaml
 apiVersion: v1
@@ -206,12 +253,14 @@ spec:
 
 ---
 
-### **⑤ ジョブとCronJobの設定**
+### ⑤ **ジョブとCronJobの設定**
 
-#### **Job / CronJob の `successfulJobsHistoryLimit`, `failedJobsHistoryLimit`, `concurrencyPolicy`**
+#### Job / CronJob の `successfulJobsHistoryLimit`, `failedJobsHistoryLimit`, `concurrencyPolicy`
 
-* **`successfulJobsHistoryLimit`** と **`failedJobsHistoryLimit`** は、成功したジョブと失敗したジョブの履歴を保持する数を設定します。
-* **`concurrencyPolicy`** は、ジョブの重複実行を制御します。
+* `kubectl explain` では意図が読み取れず、「何を制御しているのか」すら曖昧。
+* → 公式：[CronJobの設定](https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/)
+
+**サンプル (CronJob):**
 
 ```yaml
 apiVersion: batch/v1
@@ -243,11 +292,13 @@ spec:
 
 ---
 
-### **⑥ ネットワークとセキュリティ**
+### ⑥ **ネットワークとセキュリティ**
 
-#### **NetworkPolicy**
+#### NetworkPolicy
 
-* **`NetworkPolicy`** は、Pod間の通信を制御するリソースで、特定のPodへのアクセスを制限します。
+* `podSelector` や `ingress.from.namespaceSelector` などは `kubectl explain` だと表面構造だけ。
+* **Ingressに関する設定は、NetworkPolicyの一部ではなく、ネットワークトラフィックを制御するためのリソースとして区別して理解する**必要があります。
+* → 公式：\[NetworkPolicy設定]\([https://kubernetes.io/docs/concepts/services-networking/network-p](https://kubernetes.io/docs/concepts/services-networking/network-p)
 
 ```yaml
 apiVersion: networking.k8s.io/v1
@@ -276,46 +327,4 @@ spec:
     ports:
     - protocol: TCP
       port: 6379  # 6379ポート（例えばRedisなどのサービス）への通信を許可
-```
-
----
-
-### **⑦ その他リソース設定**
-
-#### **StatefulSet / Headless Service**
-
-* **`StatefulSet`** と **`Headless Service`** は、状態を保持するアプリケーションをサポートするためのリソースです。
-
-```yaml
-apiVersion: apps/v1
-kind: StatefulSet
-metadata:
-  name: statefulset-example
-spec:
-  serviceName: "nginx"
-  replicas: 3
-  selector:
-    matchLabels:
-      app: nginx
-  template:
-    metadata:
-      labels:
-        app: nginx
-    spec:
-      containers:
-      - name: nginx
-        image: nginx
-        ports:
-        - containerPort:
-```
-
-
-80
-
-```
-
----
-
-### **まとめ**
-- **リソースサンプル**を追加し、各リソースの目的や設定の意味を簡潔に説明しました。このドキュメントを参考にすることで、CKAD試験や実務での運用が効率よく進むことを期待します！
 ```
