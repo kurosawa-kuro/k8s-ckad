@@ -8,7 +8,7 @@ reset-hard:
 	MINIKUBE_CPUS=$(MINIKUBE_CPUS) \
 	MINIKUBE_MEMORY=$(MINIKUBE_MEMORY) \
 	MINIKUBE_DISK_SIZE=$(MINIKUBE_DISK_SIZE) \
-	./reset-hard.sh
+	./reset-hard.sh --host-expose --export-windows
 
 # 軽量リセット（最小リソース設定）
 reset-light:
@@ -22,7 +22,7 @@ reset-heavy:
 	MINIKUBE_CPUS=12 \
 	MINIKUBE_MEMORY=16000 \
 	MINIKUBE_DISK_SIZE=30000 \
-	./reset-hard.sh
+	./reset-hard.sh --host-expose --export-windows
 
 reset-soft:
 	./reset-soft.sh
